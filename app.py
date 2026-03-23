@@ -8,478 +8,523 @@ import random
 import base64
 from datetime import datetime
 import io
+import time
 
 # ==============================================================================
-# 1. ARCHITEKTURA SYSTEMU I KONFIGURACJA GLOBALNA
+# 1. GLOBALNA ARCHITEKTURA I KONFIGURACJA SYSTEMOWA
 # ==============================================================================
-# Wymuszamy stan sidebaru i szeroki układ dla profesjonalnego wyglądu
+# Wymuszamy stan interfejsu odpowiedni dla stacji roboczej lub terminala mobilnego
 st.set_page_config(
-    page_title="VORTEZA FLOW | APEX v7.0",
+    page_title="VORTEZA FLOW | OMNIA v8.0",
     layout="wide",
     initial_sidebar_state="expanded",
     page_icon="🕋"
 )
 
-# --- REJESTR FLOTY VORTEZA ---
-# Rozszerzone dane o techniczne naczep i koszty operacyjne
-FLEET_REGISTRY = {
+# --- REJESTR FLOTY VORTEZA SYSTEMS ---
+# Szczegółowa specyfikacja techniczna jednostek transportowych
+FLEET_SPEC = {
+    "TIR FTL (Mega)": {
+        "max_w": 24000, "L": 1360, "W": 248, "H": 300, 
+        "ldm": 13.6, "fuel_avg": 0.30, "myto": 0.22, "tank": 1200
+    },
     "TIR FTL (Standard)": {
         "max_w": 24000, "L": 1360, "W": 248, "H": 275, 
-        "ldm": 13.6, "fuel_avg": 0.28, "tank": 1200, "myto_rate": 0.20
+        "ldm": 13.6, "fuel_avg": 0.28, "myto": 0.20, "tank": 1000
     },
-    "Solo 7m (Heavy)": {
-        "max_w": 7000, "L": 720, "W": 245, "H": 270, 
-        "ldm": 7.2, "fuel_avg": 0.22, "tank": 400, "myto_rate": 0.15
+    "Solo 9m (Heavy)": {
+        "max_w": 9000, "L": 920, "W": 245, "H": 270, 
+        "ldm": 9.2, "fuel_avg": 0.24, "myto": 0.18, "tank": 500
     },
-    "Solo 6m (Medium)": {
-        "max_w": 4000, "L": 600, "W": 245, "H": 250, 
-        "ldm": 6.0, "fuel_avg": 0.18, "tank": 300, "myto_rate": 0.12
+    "Solo 7m (Medium)": {
+        "max_w": 7000, "L": 720, "W": 245, "H": 260, 
+        "ldm": 7.2, "fuel_avg": 0.20, "myto": 0.15, "tank": 400
     },
-    "BUS (Express)": {
-        "max_w": 1200, "L": 450, "W": 175, "H": 210, 
-        "ldm": 4.5, "fuel_avg": 0.10, "tank": 80, "myto_rate": 0.00
+    "BUS (Express XL)": {
+        "max_w": 1200, "L": 485, "W": 175, "H": 220, 
+        "ldm": 4.8, "fuel_avg": 0.11, "myto": 0.00, "tank": 90
     }
 }
 
 # ==============================================================================
-# 2. VORTEZA DESIGN LANGUAGE (ADVANCED CSS)
+# 2. VORTEZA PRESTIGE DESIGN SYSTEM (ADVANCED CSS)
 # ==============================================================================
-def apply_vorteza_apex_theme():
-    """Wstrzykuje zaawansowany arkusz stylów CSS klasy Enterprise."""
+def apply_vorteza_omnia_theme():
+    """Wstrzykuje zaawansowany arkusz stylów CSS VORTEZA Omna Edition."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=JetBrains+Mono:wght@300;500&display=swap');
             
             :root {
                 --v-copper: #B58863;
+                --v-copper-dim: rgba(181, 136, 99, 0.4);
                 --v-dark-bg: #050505;
-                --v-card-bg: rgba(15, 15, 15, 0.99);
-                --v-border: rgba(181, 136, 99, 0.25);
-                --v-success: #2ecc71;
+                --v-card-bg: rgba(12, 12, 12, 0.99);
+                --v-border: rgba(181, 136, 99, 0.2);
+                --v-text-gold: #D4AF37;
             }
 
-            /* Global App Styling */
-            .stApp { background-color: var(--v-dark-bg); color: #E0E0E0; font-family: 'Montserrat', sans-serif; }
+            /* Global App Base */
+            .stApp { 
+                background-color: var(--v-dark-bg); 
+                color: #F0F0F0; 
+                font-family: 'Montserrat', sans-serif; 
+            }
             
-            /* Sidebar Navigation */
+            /* Sidebar Optimization */
             section[data-testid="stSidebar"] {
                 background-color: #080808 !important;
                 border-right: 1px solid var(--v-border);
-                width: 400px !important;
+                width: 420px !important;
             }
 
-            /* Apex Cards */
-            .v-apex-card {
+            /* Omnia High-End Cards */
+            .v-omnia-card {
                 background: var(--v-card-bg);
-                padding: 2rem;
+                padding: 2.5rem;
                 border-radius: 2px;
                 border: 1px solid var(--v-border);
-                border-left: 8px solid var(--v-copper);
-                box-shadow: 0 30px 90px rgba(0,0,0,0.9);
-                margin-bottom: 2.5rem;
-                backdrop-filter: blur(20px);
+                border-left: 10px solid var(--v-copper);
+                box-shadow: 0 40px 120px rgba(0,0,0,1);
+                margin-bottom: 3rem;
+                backdrop-filter: blur(25px);
             }
 
-            /* Custom Typography */
-            h1, h2, h3 { color: var(--v-copper) !important; text-transform: uppercase; letter-spacing: 6px !important; font-weight: 700 !important; }
-            .v-label { color: var(--v-copper); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; }
+            /* Typography */
+            h1, h2, h3 { 
+                color: var(--v-copper) !important; 
+                text-transform: uppercase; 
+                letter-spacing: 8px !important; 
+                font-weight: 700 !important; 
+                text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
+            }
+            .v-sub { color: #555; font-size: 0.7rem; letter-spacing: 3px; font-weight: 400; }
 
-            /* Metrics Pro */
+            /* Metrics & KPI */
             [data-testid="stMetricValue"] { 
                 color: var(--v-copper) !important; 
                 font-family: 'JetBrains Mono', monospace !important; 
-                font-size: 2.8rem !important;
-                text-shadow: 0 0 10px rgba(181, 136, 99, 0.3);
+                font-size: 3rem !important;
+                font-weight: 500 !important;
             }
 
-            /* Buttons Apex */
+            /* Buttons & Interactivity */
             .stButton > button {
-                background: rgba(0,0,0,0.5);
+                background: rgba(10, 10, 10, 0.8);
                 color: var(--v-copper);
                 border: 1px solid var(--v-copper);
-                padding: 1rem 2rem;
+                padding: 1.2rem 2.5rem;
                 text-transform: uppercase;
-                letter-spacing: 4px;
+                letter-spacing: 5px;
                 font-weight: 700;
                 width: 100%;
-                transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+                transition: 0.5s cubic-bezier(0.19, 1, 0.22, 1);
             }
             .stButton > button:hover {
                 background: var(--v-copper);
                 color: black;
-                box-shadow: 0 0 50px rgba(181, 136, 99, 0.6);
-                transform: translateY(-2px);
+                box-shadow: 0 0 60px rgba(181, 136, 99, 0.7);
+                transform: scale(1.02);
             }
 
-            /* Tables & Dataframes */
-            .v-data-table { width: 100%; border-collapse: collapse; margin-top: 25px; }
-            .v-data-table th { color: var(--v-copper); text-align: left; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid #333; padding: 18px; }
-            .v-data-table td { padding: 18px; border-bottom: 1px solid #1a1a1a; font-size: 0.9rem; color: #AAA; }
+            /* Pro Tables */
+            .v-table-pro { width: 100%; border-collapse: collapse; margin-top: 30px; }
+            .v-table-pro th { 
+                color: var(--v-copper); 
+                text-align: left; 
+                font-size: 0.7rem; 
+                text-transform: uppercase; 
+                border-bottom: 2px solid #333; 
+                padding: 20px; 
+                letter-spacing: 2px;
+            }
+            .v-table-pro td { padding: 18px 20px; border-bottom: 1px solid #151515; font-size: 0.9rem; color: #AAA; }
 
-            /* Terminal Log View */
-            .terminal-view {
-                background: #000;
-                color: var(--v-success);
-                font-family: 'JetBrains Mono', monospace;
+            /* Inventory Tooltip */
+            .unit-box {
+                background: rgba(181, 136, 99, 0.02);
+                border: 1px solid var(--v-copper-dim);
                 padding: 15px;
-                border: 1px solid #222;
+                margin: 15px 0;
                 font-size: 0.8rem;
-                max-height: 200px;
-                overflow-y: auto;
+                color: #888;
+                border-radius: 1px;
             }
         </style>
     """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 3. KONTROLA DOSTĘPU (APEX SECURITY)
+# 3. KONTROLA DOSTĘPU (SECURE GATEWAY)
 # ==============================================================================
-def authenticate_terminal():
-    """Zabezpiecza interfejs Apex przed niepowołanym dostępem."""
+def authenticate_vorteza():
+    """Zarządza autoryzacją dostępu na podstawie hasła systemowego."""
     if "authorized" not in st.session_state:
         st.session_state.authorized = False
 
     if not st.session_state.authorized:
-        # Pobieranie hasła z Streamlit Secrets
         try:
-            sys_key = str(st.secrets.get("password", "vorteza2026"))
+            # Hasło pobierane z Streamlit Secrets
+            sys_pass = str(st.secrets.get("password", "vorteza2026"))
         except:
-            sys_key = "vorteza2026"
+            sys_pass = "vorteza2026"
 
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns([1, 1.8, 1])
         with c2:
-            with st.form("ApexAuth"):
+            with st.form("OmniaAuth"):
                 st.markdown("<h2 style='text-align:center;'>VORTEZA LOGIN</h2>", unsafe_allow_html=True)
-                key_in = st.text_input("GOLIATH CORE KEY", type="password")
-                if st.form_submit_button("UNLOCK SYSTEM"):
-                    if key_in == sys_key:
+                st.markdown("<p style='text-align:center; color:#444; font-size:0.7rem;'>SECURITY CLEARANCE REQUIRED</p>", unsafe_allow_html=True)
+                k_in = st.text_input("GOLIATH MASTER KEY", type="password")
+                if st.form_submit_button("UNLOCK TERMINAL"):
+                    if k_in == sys_pass:
                         st.session_state.authorized = True
                         st.rerun()
                     else:
-                        st.error("ACCESS DENIED: INVALID KEY")
+                        st.error("ACCESS DENIED: INCORRECT CORE KEY")
         return False
     return True
 
 # ==============================================================================
-# 4. SILNIK RENDEROWANIA 3D CAD-APEX
+# 4. CHROMATYCZNY SILNIK KOLORÓW (PRODUCT COLOR ENGINE)
 # ==============================================================================
-def render_apex_3d(vehicle, stacks):
-    """Generuje hiper-szczegółowy model naczepy i ładunku w 3D."""
+def get_vorteza_color(name):
+    """Generuje stabilny, unikalny kolor dla każdego produktu bazując na jego nazwie."""
+    # Paleta "Vorteza Industrial" - odcienie miedzi, złota, szarości i głębokich błękitów
+    palette = [
+        "#B58863", "#D4AF37", "#8E6A4D", "#5E4633", "#A67C52", 
+        "#4A4A4A", "#2F2F2F", "#1A252F", "#2C3E50", "#34495E",
+        "#7F8C8D", "#95A5A6", "#BDC3C7", "#7E4A35", "#C0392B",
+        "#D35400", "#F39C12", "#27AE60", "#2980B9", "#8E44AD"
+    ]
+    # Używamy hasha nazwy produktu jako ziarna dla generatora, aby kolor był zawsze ten sam
+    random.seed(sum(ord(c) for c in name))
+    return random.choice(palette)
+
+# ==============================================================================
+# 5. RENDERER 3D CAD-OMNIA (VISUAL ENGINE)
+# ==============================================================================
+def render_omnia_3d(vehicle, stacks):
+    """Generuje zaawansowany model 3D naczepy z unikalnym kolorowaniem produktów."""
     fig = go.Figure()
     L, W, H = vehicle['L'], vehicle['W'], vehicle['H']
 
-    # --- KONSTRUKCJA MASZYNY ---
-    # Podłoga naczepy (Baza)
+    # --- INFRASTRUKTURA POJAZDU ---
+    # Podstawa naczepy (Chassis)
     fig.add_trace(go.Mesh3d(
-        x=[0, L, L, 0], y=[0, 0, W, W], z=[-4, -4, -4, -4],
+        x=[0, L, L, 0], y=[0, 0, W, W], z=[-5, -5, -5, -5],
         color='#111', opacity=1, hoverinfo='skip'
     ))
     
-    # Podwozie (Rama stalowa)
-    fig.add_trace(go.Scatter3d(
-        x=[0, L, L, 0, 0], y=[20, 20, W-20, W-20, 20], z=[-8, -8, -8, -8, -8],
-        mode='lines', line=dict(color='#222', width=10), hoverinfo='skip'
-    ))
-
-    # Koła (Uproszczone mesh'e)
-    w_offsets = [150, 220, 290, L-120, L-200]
-    for wo in w_offsets:
-        if wo < L:
-            for side in [-20, W+10]:
+    # Koła (Modelowanie techniczne)
+    wheel_pos = [150, 220, 290, L-100, L-170]
+    for wp in wheel_pos:
+        if wp < L:
+            for side in [-25, W+15]:
                 fig.add_trace(go.Mesh3d(
-                    x=[wo-30, wo+30, wo+30, wo-30], y=[side, side, side+10, side+10], z=[-35, -35, -5, -5],
-                    color='#000', opacity=1, hoverinfo='skip'
+                    x=[wp-35, wp+35, wp+35, wp-35], y=[side, side, side+10, side+10], 
+                    z=[-40, -40, -5, -5], color='#000', opacity=1, hoverinfo='skip'
                 ))
 
-    # Kabina (Solidny CAD Block)
+    # Kabina (Industrial Block CAD)
     fig.add_trace(go.Mesh3d(
         x=[-160, 0, 0, -160, -160, 0, 0, -160],
-        y=[-10, -10, W+10, W+10, -10, -10, W+10, W+10],
+        y=[-15, -15, W+15, W+15, -15, -15, W+15, W+15],
         z=[0, 0, 0, 0, H*0.9, H*0.9, H*0.9, H*0.9],
         i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6],
-        color='#080808', opacity=1, name="KABINA"
+        color='#050505', opacity=1, name="COMMAND_CAB"
     ))
 
-    # Klatka Bezpieczeństwa (Miedź)
+    # Klatka Naczepy (Miedziane krawędzie konstrukcyjne)
     cage = [
         ([0, L], [0, 0], [0, 0]), ([0, L], [W, W], [0, 0]), ([0, 0], [0, W], [0, 0]), ([L, L], [0, W], [0, 0]),
         ([0, 0], [0, 0], [0, H]), ([0, 0], [W, W], [0, H]), ([0, L], [0, 0], [H, H]), ([0, L], [W, W], [H, H]),
         ([L, L], [0, 0], [0, H]), ([L, L], [W, W], [0, H])
     ]
     for xc, yc, zc in cage:
-        fig.add_trace(go.Scatter3d(x=xc, y=yc, z=zc, mode='lines', line=dict(color='#B58863', width=6), hoverinfo='skip'))
+        fig.add_trace(go.Scatter3d(x=xc, y=yc, z=zc, mode='lines', line=dict(color='#B58863', width=5), hoverinfo='skip'))
 
-    # --- RENDER ŁADUNKU ---
-    for s_idx, stack in enumerate(stacks):
-        base_shade = max(60, 181 - (s_idx % 10) * 12)
-        c_color = f'rgb({base_shade}, {int(base_shade*0.75)}, {int(base_shade*0.55)})'
-        
+    # --- RENDER ŁADUNKU (DYNAMIC COLORS) ---
+    for stack in stacks:
         for item in stack['items']:
             x, y, z = stack['x'], stack['y'], item['z']
             dx, dy, dz = item['w_fit'], item['l_fit'], item['height']
             
-            # Bryła
+            # Pobieramy unikalny kolor dla tego produktu
+            p_color = get_vorteza_color(item['name'])
+            
+            # Bryła produktu
             fig.add_trace(go.Mesh3d(
-                x=[x,x+dx,x+dx,x,x,x+dx,x+dx,x], y=[y,y,y+dy,y+dy,y,y,y+dy,y+dy], z=[z,z,z,z,z+dz,z+dz,z+dz,z+dz],
+                x=[x,x+dx,x+dx,x,x,x+dx,x+dx,x], y=[y,y,y+dy,y+dy,y,y,y+dy,y+dy], 
+                z=[z,z,z,z,z+dz,z+dz,z+dz,z+dz],
                 i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6],
-                color=c_color, opacity=0.98, name=item['name']
+                color=p_color, opacity=0.98, name=item['name']
             ))
-            # Kontur
+            # Kontur dla czytelności (Krawędzie)
             fig.add_trace(go.Scatter3d(
                 x=[x,x+dx,x+dx,x,x,x,x+dx,x+dx,x,x,x+dx,x+dx,x+dx,x+dx,x,x],
                 y=[y,y,y+dy,y+dy,y,y,y,y+dy,y+dy,y+dy,y+dy,y,y,y+dy,y+dy,y],
                 z=[z,z,z,z,z,z+dz,z+dz,z,z,z+dz,z+dz,z+dz,z,z,z+dz,z+dz],
-                mode='lines', line=dict(color='black', width=1.8), hoverinfo='skip'
+                mode='lines', line=dict(color='black', width=1.5), hoverinfo='skip'
             ))
 
     fig.update_layout(
         scene=dict(
             aspectmode='data', xaxis_visible=False, yaxis_visible=False, zaxis_visible=False,
-            camera=dict(eye=dict(x=2.1, y=2.1, z=1.4)), bgcolor='rgba(0,0,0,0)'
+            camera=dict(eye=dict(x=2.2, y=2.2, z=1.5)), bgcolor='rgba(0,0,0,0)'
         ),
         paper_bgcolor='rgba(0,0,0,0)', margin=dict(l=0, r=0, b=0, t=0), showlegend=False
     )
     return fig
 
 # ==============================================================================
-# 5. ZAAWANSOWANY SILNIK PAKOWANIA (V-ENGINE 7.0 APEX)
+# 6. RDZEŃ OPTYMALIZACJI (V-ENGINE 8.0)
 # ==============================================================================
-class ApexEngine:
-    """Algorytm optymalizacji 3D z kontrolą środka ciężkości i rotacją."""
+class V8Engine:
+    """Zaawansowany algorytm bin packing z kontrolą wielu parametrów."""
     
     @staticmethod
-    def solve(cargo, veh):
-        # Sortowanie: 1. Brak piętrowania (najcięższe na dół), 2. Powierzchnia podstawy
-        items = sorted(cargo, key=lambda x: (not x.get('canStack', True), x['width']*x['length']), reverse=True)
+    def pack(cargo, veh):
+        # Priorytetyzacja: 1. Brak możliwości piętrowania (ciężkie), 2. Pole powierzchni (L*W)
+        sorted_items = sorted(cargo, key=lambda x: (not x.get('canStack', True), x['width']*x['length']), reverse=True)
         
-        stacks, failed, weight_cur = [], [], 0
-        cx, cy, row_max_w = 0, 0, 0
+        stacks, failed, weight_sum = [], [], 0
+        cx, cy, current_row_max_w = 0, 0, 0
 
-        for it in items:
-            if weight_cur + it['weight'] > veh['max_w']:
+        for it in sorted_items:
+            # Sprawdzenie masy dopuszczalnej
+            if weight_sum + it['weight'] > veh['max_w']:
                 failed.append(it); continue
             
-            # Próba piętrowania
-            is_stacked = False
+            # Próba piętrowania (Stacking Logic)
+            stacked = False
             if it.get('canStack', True):
                 for s in stacks:
-                    match = (it['width'] <= s['w'] and it['length'] <= s['l']) or (it['length'] <= s['w'] and it['width'] <= s['l'])
-                    if match and (s['curH'] + it['height'] <= veh['H']):
+                    # Sprawdzenie wymiarów z uwzględnieniem rotacji 90 st.
+                    dim_match = (it['width'] <= s['w'] and it['length'] <= s['l']) or (it['length'] <= s['w'] and it['width'] <= s['l'])
+                    if dim_match and (s['curH'] + it['height'] <= veh['H']):
                         it_c = it.copy(); it_c['z'] = s['curH']
                         it_c['w_fit'], it_c['l_fit'] = s['w'], s['l']
-                        s['items'].append(it_c)
-                        s['curH'] += it['height']; weight_cur += it['weight']
-                        is_stacked = True; break
+                        s['items'].append(it_c); s['curH'] += it['height']
+                        weight_sum += it['weight']; stacked = True; break
             
-            if is_stacked: continue
+            if stacked: continue
 
-            # Próba podłogi (z rotacją)
+            # Próba zajęcia nowej powierzchni podłogi (Floor Logic)
             placed = False
-            for fw, fl in [(it['width'], it['length']), (it['length'], it['width'])]:
+            orientations = [(it['width'], it['length']), (it['length'], it['width'])]
+            for fw, fl in orientations:
                 if cy + fl <= veh['W'] and cx + fw <= veh['L']:
                     it_c = it.copy(); it_c['z'] = 0; it_c['w_fit'], it_c['l_fit'] = fw, fl
                     stacks.append({'x':cx, 'y':cy, 'w':fw, 'l':fl, 'curH':it['height'], 'items':[it_c]})
-                    cy += fl; row_max_w = max(row_max_w, fw); weight_cur += it['weight']; placed = True; break
-                elif cx + row_max_w + fw <= veh['L'] and fl <= veh['W']:
-                    cx += row_max_w; cy = 0; row_max_w = fw
+                    cy += fl; current_row_max_w = max(current_row_max_w, fw); weight_sum += it['weight']; placed = True; break
+                elif cx + current_row_max_w + fw <= veh['L'] and fl <= veh['W']:
+                    cx += current_row_max_w; cy = 0; current_row_max_w = fw
                     it_c = it.copy(); it_c['z'] = 0; it_c['w_fit'], it_c['l_fit'] = fw, fl
                     stacks.append({'x':cx, 'y':cy, 'w':fw, 'l':fl, 'curH':it['height'], 'items':[it_c]})
-                    cy += fl; weight_cur += it['weight']; placed = True; break
+                    cy += fl; weight_sum += it['weight']; placed = True; break
             
             if not placed: failed.append(it)
         
         ldm_real = max([s['x'] + s['w'] for s in stacks]) / 100 if stacks else 0
-        return stacks, weight_cur, failed, ldm_real
+        return stacks, weight_sum, failed, ldm_real
 
 # ==============================================================================
-# 6. MODUŁY POMOCNICZE (Baza, Logi)
+# 7. ZARZĄDZANIE DANYMI (INVENTORY MODULE)
 # ==============================================================================
-def get_inventory():
+def load_db():
     try:
         with open('products.json', 'r', encoding='utf-8') as f: return json.load(f)
     except: return []
 
-def save_inventory(data):
+def save_db(data):
     with open('products.json', 'w', encoding='utf-8') as f: json.dump(data, f, indent=4, ensure_ascii=False)
 
-def log_terminal(msg):
-    if 'terminal_logs' not in st.session_state: st.session_state.terminal_logs = []
-    timestamp = datetime.now().strftime("%H:%M:%S")
-    st.session_state.terminal_logs.append(f"[{timestamp}] {msg}")
-
 # ==============================================================================
-# 7. GŁÓWNY INTERFEJS OPERACYJNY (APEX COMMAND)
+# 8. GŁÓWNA APLIKACJA (OMNIA CONTROL CENTER)
 # ==============================================================================
 def main():
-    apply_vorteza_apex_theme()
+    apply_vorteza_omnia_theme()
     
-    if not authenticate_terminal(): return
+    if not authenticate_vorteza(): return
 
-    # --- STAN SESJI ---
+    # Inicjalizacja Manifestu w sesji
     if 'v_manifest' not in st.session_state: st.session_state.v_manifest = []
-    inventory = get_inventory()
+    inventory = load_db()
 
     # --- TOP NAVBAR ---
-    h1, h2 = st.columns([5, 1])
-    with h1:
-        st.markdown("<h1>VORTEZA APEX FLOW</h1>", unsafe_allow_html=True)
-        st.markdown(f"<p style='color:#666; font-size:0.7rem; letter-spacing:4px;'>APEX LOGISTICS ENGINE v7.0.0 | CORE STATUS: ACTIVE | {datetime.now().strftime('%d/%m/%Y')}</p>", unsafe_allow_html=True)
-    with h2:
-        if st.button("TERMINATE"):
+    h_col1, h_col2 = st.columns([5, 1])
+    with h_col1:
+        st.markdown("<h1>VORTEZA OMNIA FLOW</h1>", unsafe_allow_html=True)
+        st.markdown(f"<p class='v-sub'>INTEGRATED COMMAND TERMINAL | v8.0.01 | STATUS: ONLINE</p>", unsafe_allow_html=True)
+    with h_col2:
+        if st.button("TERMINATE SESSION"):
             st.session_state.authorized = False; st.rerun()
 
-    # --- SIDEBAR: JEDNOSTKA DOWODZENIA ---
+    # --- SIDEBAR CONTROL ---
     with st.sidebar:
-        st.markdown("### 📡 COMMAND CENTER")
-        v_sel = st.selectbox("ACTIVE UNIT", list(FLEET_REGISTRY.keys()))
-        veh = FLEET_REGISTRY[v_sel]
+        st.markdown("### 🛰️ COMMAND CENTER")
+        v_sel_name = st.selectbox("SELECT FLEET UNIT", list(FLEET_SPEC.keys()))
+        veh_active = FLEET_SPEC[v_sel_name]
         
-        st.markdown(f"""<div style='background:rgba(181,136,99,0.1); border:1px solid var(--v-copper); padding:15px; font-size:0.8rem;'>
+        st.markdown(f"""<div class='unit-box'>
             <b>UNIT SPECS:</b><br>
-            DIM: {veh['L']} x {veh['W']} x {veh['H']} cm<br>
-            MAX PAYLOAD: {veh['max_w']} kg<br>
-            LDM CAPACITY: {veh['ldm']}
+            VOLUME: {veh_active['L']}x{veh_active['W']}x{veh_active['H']} cm<br>
+            PAYLOAD: {veh_active['max_w']} kg<br>
+            LDM: {veh_active['ldm']}
         </div>""", unsafe_allow_html=True)
         
         st.divider()
-        st.markdown("### 📦 MANIFEST ADDITION")
-        p_list = [p['name'] for p in inventory]
-        sel_p = st.selectbox("PRODUCT BROWSER", p_list, index=None)
+        st.markdown("### 📥 MANIFEST INPUT")
+        p_names = [p['name'] for p in inventory]
+        sel_p_name = st.selectbox("BROWSE INVENTORY", p_names, index=None)
         
-        if sel_p:
-            p_obj = next(p for p in inventory if p['name'] == sel_p)
+        if sel_p_name:
+            p_obj = next(p for p in inventory if p['name'] == sel_p_name)
             ipc = p_obj.get('itemsPerCase', 1)
-            st.caption(f"Standard Packaging: {ipc} pcs/unit")
-            count_in = st.number_input("QUANTITY (TOTAL PCS)", min_value=1, value=ipc)
-            num_c = math.ceil(count_in / ipc)
+            st.markdown(f"<p style='color:var(--v-copper); font-size:0.7rem;'>PACKAGING: {ipc} pcs/case</p>", unsafe_allow_html=True)
+            in_qty = st.number_input("TOTAL PCS TO SHIP", min_value=1, value=ipc)
+            n_cases = math.ceil(in_qty / ipc)
             
             if st.button("APPEND TO MANIFEST", type="primary"):
-                for i in range(num_c):
-                    it = p_obj.copy()
-                    it['p_act'] = ipc if (i < num_c - 1 or count_in % ipc == 0) else (count_in % ipc)
-                    st.session_state.v_manifest.append(it)
-                log_terminal(f"Added {num_c} cases of {sel_p}")
-                st.rerun()
+                for i in range(n_cases):
+                    unit = p_obj.copy()
+                    # Przeliczenie realnej liczby sztuk w każdym opakowaniu
+                    unit['p_actual'] = ipc if (i < n_cases - 1 or in_qty % ipc == 0) else (in_qty % ipc)
+                    st.session_state.v_manifest.append(unit)
+                st.toast(f"Synchronized: {n_cases} cases added.")
 
-        if st.button("PURGE MANIFEST"):
-            st.session_state.v_manifest = []; log_terminal("Manifest cleared."); st.rerun()
+        if st.button("PURGE MANIFEST DATA"):
+            st.session_state.v_manifest = []; st.rerun()
 
-    # --- TABS: PLANNER / INVENTORY / ANALYTICS / LOGS ---
-    t_plan, t_inv, t_cost, t_admin = st.tabs(["📊 APEX PLANNER", "📦 INVENTORY", "💰 COST ANALYSIS", "⚙️ SYSTEM LOGS"])
+    # --- MAIN VIEW TABS ---
+    tab_plan, tab_inv, tab_fin, tab_ana = st.tabs(["📊 PLANNER", "📦 INVENTORY", "💰 COSTS", "📈 ANALYTICS"])
 
     # --------------------------------------------------------------------------
-    # TAB 1: APEX PLANNER
+    # TAB 1: PLANNER ZAŁADUNKU
     # --------------------------------------------------------------------------
-    with t_plan:
+    with tab_plan:
         if st.session_state.v_manifest:
-            # Metrics Row
-            m1, m2, m3, m4 = st.columns(4)
+            # Metrics Dash
             total_w = sum(float(u['weight']) for u in st.session_state.v_manifest)
-            total_u = len(st.session_state.v_manifest)
-            total_pcs = sum(int(u.get('p_act', 1)) for u in st.session_state.v_manifest)
+            total_pcs = sum(int(u.get('p_actual', 1)) for u in st.session_state.v_manifest)
             
-            m1.metric("TOTAL UNITS", total_u)
-            m2.metric("TOTAL PCS", total_pcs)
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("CASES", len(st.session_state.v_manifest))
+            m2.metric("PCS TOTAL", total_pcs)
             m3.metric("GROSS WEIGHT", f"{total_w} kg")
-            m4.metric("WEIGHT UTIL", f"{(total_w/veh['max_w'])*100:.1f}%")
+            m4.metric("WEIGHT UTIL", f"{(total_w/veh_active['max_w'])*100:.1f}%")
 
-            # Optimization Run
-            rem = [dict(u) for u in st.session_state.v_manifest]
-            fleet = []
-            while rem:
-                s, w, n, l = ApexEngine.solve(rem, veh)
-                if not s: break
-                fleet.append({"stacks": s, "weight": w, "ldm": l})
-                rem = n
+            # Packing Execution
+            rem_cargo = [dict(u) for u in st.session_state.v_manifest]
+            fleet_plan = []
+            
+            while rem_cargo:
+                stacks, w_res, not_p, ldm_r = V8Engine.pack(rem_cargo, veh_active)
+                if not stacks: break
+                fleet_plan.append({"stacks": stacks, "weight": w_res, "ldm": ldm_r})
+                rem_cargo = not_p
 
-            st.markdown(f"### ASSIGNED UNITS: {len(fleet)}")
-            for idx, unit in enumerate(fleet):
-                st.markdown(f'<div class="v-apex-card">', unsafe_allow_html=True)
-                st.markdown(f"### UNIT #{idx+1} | {v_sel}", unsafe_allow_html=True)
+            st.markdown(f"### ASSIGNED FLEET UNITS: {len(fleet_plan)}")
+            
+            for idx, unit in enumerate(fleet_plan):
+                st.markdown(f'<div class="v-omnia-card">', unsafe_allow_html=True)
+                st.markdown(f"### UNIT #{idx+1} | {v_sel_name}", unsafe_allow_html=True)
                 
-                c3d, cde = st.columns([2, 1])
-                with c3d:
-                    st.plotly_chart(render_apex_3d(veh, unit['stacks']), use_container_width=True)
-                with cde:
-                    st.markdown("**OPERATIONAL KPI**")
-                    st.write(f"Utilized Weight: {unit['weight']} kg")
-                    st.write(f"Utilized LDM: {unit['ldm']:.2f}")
-                    st.write(f"Mass Ratio: {(unit['weight']/veh['max_w'])*100:.1f}%")
+                c_3d, c_dat = st.columns([2, 1])
+                with c_3d:
+                    st.plotly_chart(render_omnia_3d(veh_active, unit['stacks']), use_container_width=True)
+                with c_dat:
+                    st.markdown("**OPERATIONAL PERFORMANCE**")
+                    st.write(f"Mass Utilization: {(unit['weight']/veh_active['max_w'])*100:.1f}%")
+                    st.write(f"LDM Occupied: {unit['ldm']:.2f} m")
                     
                     st.divider()
-                    st.markdown("**PACKING LIST**")
-                    it_names = [it['name'] for s in unit['stacks'] for it in s['items']]
-                    if it_names:
-                        sum_df = pd.Series(it_names).value_counts().reset_index()
-                        sum_df.columns = ['Product', 'Qty']
+                    st.markdown("**DETAILED PACKING LIST**")
+                    u_items = [it['name'] for s in unit['stacks'] for it in s['items']]
+                    if u_items:
+                        counts = pd.Series(u_items).value_counts().reset_index()
+                        counts.columns = ['Product', 'Cases']
                         
-                        html = '<table class="v-table-pro"><tr><th>Product</th><th>Cases</th></tr>'
-                        for _, r in sum_df.iterrows():
-                            html += f'<tr><td>{r["Product"]}</td><td>{r["Qty"]}</td></tr>'
+                        html = '<table class="v-table-pro"><tr><th>SKU</th><th>UNIT QTY</th></tr>'
+                        for _, r in counts.iterrows():
+                            html += f'<tr><td>{r["Product"]}</td><td>{r["Cases"]}</td></tr>'
                         st.markdown(html+'</table>', unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
         else:
-            st.info("Manifest empty. Add items from Sidebar.")
+            st.info("Manifest empty. Add items via Command Center.")
 
     # --------------------------------------------------------------------------
-    # TAB 2: INVENTORY
+    # TAB 2: INVENTORY MANAGEMENT
     # --------------------------------------------------------------------------
-    with t_inv:
-        st.markdown("### 📦 PRODUCT DATABASE ADMIN")
-        with st.expander("➕ NEW PRODUCT DEFINITION"):
-            with st.form("NewProd"):
-                f_name = st.text_input("Name")
+    with tab_inv:
+        st.markdown("### 📦 PRODUCT CORE DATABASE")
+        
+        with st.expander("➕ DEFINE NEW PRODUCT SKR"):
+            with st.form("AddP"):
+                f_name = st.text_input("Product Name / SKU")
                 c1, c2, c3 = st.columns(3)
                 f_l = c1.number_input("L (cm)", 120)
                 f_w = c2.number_input("W (cm)", 80)
                 f_h = c3.number_input("H (cm)", 100)
-                f_wgt = st.number_input("Weight (kg)", 100)
-                f_ipc = st.number_input("Pcs/Case", 1)
-                f_stk = st.checkbox("Stackable", True)
-                if st.form_submit_button("COMMIT TO DB"):
-                    inventory.append({"name":f_name,"length":f_l,"width":f_w,"height":f_h,"weight":f_wgt,"itemsPerCase":f_ipc,"canStack":f_stk})
-                    save_inventory(inventory)
-                    log_terminal(f"Created product: {f_name}")
-                    st.rerun()
+                f_weight = st.number_input("Weight (kg)", 50)
+                f_ipc = st.number_input("Items/Case", 1)
+                f_stk = st.checkbox("Stackable Unit", True)
+                if st.form_submit_button("COMMIT TO CORE"):
+                    inventory.append({"name": f_name, "length": f_l, "width": f_w, "height": f_h, "weight": f_weight, "itemsPerCase": f_ipc, "canStack": f_stk})
+                    save_db(inventory)
+                    st.success("Synchronized."); st.rerun()
 
         st.divider()
         if inventory:
             df_i = pd.DataFrame(inventory)
             ed_df = st.data_editor(df_i, use_container_width=True, num_rows="dynamic")
-            if st.button("SYNC DATABASE"):
-                save_inventory(ed_df.to_dict('records'))
-                log_terminal("Database synchronized.")
-                st.success("Sync Complete.")
+            if st.button("PUSH DATABASE CHANGES"):
+                save_db(ed_df.to_dict('records'))
+                st.success("Global database updated.")
+        else:
+            st.warning("Database empty.")
 
     # --------------------------------------------------------------------------
-    # TAB 3: COST ANALYSIS
+    # TAB 3: FINANCIAL ANALYSIS
     # --------------------------------------------------------------------------
-    with t_cost:
-        st.markdown("### 💰 TRANSPORT COST SIMULATOR")
+    with tab_fin:
+        st.markdown("### 💰 TRANSPORT COST INTELLIGENCE")
         c1, c2 = st.columns(2)
         with c1:
-            dist = st.number_input("Total Distance (km)", 0, 5000, 500)
-            fuel_p = st.number_input("Fuel Price (PLN/L)", 0.0, 10.0, 6.5)
+            st.markdown('<div class="v-omnia-card">', unsafe_allow_html=True)
+            dist = st.number_input("Total Route Distance (km)", 100, 5000, 1000)
+            fuel_price = st.number_input("ON Price (PLN/L)", 5.0, 10.0, 6.45)
+            st.markdown('</div>', unsafe_allow_html=True)
         with c2:
-            st.markdown(f"**Calculated for: {v_sel}**")
-            total_f = dist * veh['fuel_avg']
-            cost_f = total_f * fuel_p
-            cost_m = dist * veh['myto_rate'] * 4.3 # PLN
+            st.markdown('<div class="v-omnia-card">', unsafe_allow_html=True)
+            total_fuel = dist * veh_active['fuel_avg']
+            fuel_cost = total_fuel * fuel_price
+            tolls = dist * veh_active['myto'] * 4.35 # Przelicznik EUR->PLN
             
-            st.markdown(f"""<div class='v-apex-card'>
-                Fuel Required: <b>{total_f:.1f} L</b><br>
-                Fuel Cost: <b>{cost_f:.2f} PLN</b><br>
-                Tolls (Est.): <b>{cost_m:.2f} PLN</b><br><hr>
-                <b>TOTAL EST: {(cost_f + cost_m):.2f} PLN</b>
-            </div>""", unsafe_allow_html=True)
+            st.markdown(f"**Calculated for: {v_sel_name}**")
+            st.write(f"Fuel Consumption: {total_fuel:.1f} L")
+            st.write(f"Fuel Cost: {fuel_cost:.2f} PLN")
+            st.write(f"EU Tolls (Est): {tolls:.2f} PLN")
+            st.divider()
+            st.markdown(f"#### TOTAL OPERATING COST: <span style='color:var(--v-copper);'>{(fuel_cost + tolls):,.2f} PLN</span>", unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
 
     # --------------------------------------------------------------------------
-    # TAB 4: SYSTEM LOGS
+    # TAB 4: ADVANCED ANALYTICS
     # --------------------------------------------------------------------------
-    with t_admin:
-        st.markdown("### ⚙️ TERMINAL LOGS")
-        logs = "\n".join(st.session_state.get('terminal_logs', ["System Initialized..."]))
-        st.markdown(f'<div class="terminal-view">{logs}</div>', unsafe_allow_html=True)
+    with tab_ana:
+        st.markdown("### 📈 FLEET PERFORMANCE DATA")
+        if st.session_state.v_manifest:
+            an_df = pd.DataFrame(st.session_state.v_manifest)
+            c1, c2 = st.columns(2)
+            with c1:
+                fig_pie = px.pie(an_df, names='name', title="Weight Share per SKU", hole=0.5, color_discrete_sequence=px.colors.sequential.copper)
+                st.plotly_chart(fig_pie, use_container_width=True)
+            with c2:
+                fig_bar = px.bar(an_df, x='name', y='weight', title="Mass Contribution (KG)", color='weight', color_continuous_scale='copper')
+                st.plotly_chart(fig_bar, use_container_width=True)
+        else:
+            st.info("No data in manifest for analysis.")
 
 if __name__ == "__main__":
     main()
