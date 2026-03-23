@@ -2,7 +2,7 @@
 """
 ================================================================================
 SYSTEM: VORTEZA STACK 
-VERSION: 24.0 | APEX ULTIMATE PLUS | MULTI-LANG & EDITABLE
+VERSION: 24.0 | APEX ULTIMATE PLUS | MULTI-LANG & SMART MANIFEST
 FIRM: VORTEZA SYSTEMS
 STATUS: ENTERPRISE PRODUCTION READY | FULL MONOLITH SOURCE
 ================================================================================
@@ -11,18 +11,15 @@ STATUS: ENTERPRISE PRODUCTION READY | FULL MONOLITH SOURCE
 import streamlit as st
 import json
 import plotly.graph_objects as go
-import plotly.express as px
 import math
 import pandas as pd
 import random
 import base64
 from datetime import datetime
-import io
 import os
-from PIL import Image
 
 # ==============================================================================
-# 0. MULTILINGUAL ENGINE (V-LANG) - PEŁNA IMPLEMENTACJA
+# 0. MULTILINGUAL ENGINE (V-LANG)
 # ==============================================================================
 LANGUAGES = {
     "PL": {
@@ -135,6 +132,7 @@ def inject_vorteza_stack_ui():
             :root {{
                 --v-copper: #B58863;
                 --v-copper-glow: rgba(181, 136, 99, 0.4);
+                --v-dark-obsidian: #020202;
                 --v-panel-bg: rgba(6, 6, 6, 0.98);
                 --v-border: rgba(181, 136, 99, 0.2);
                 --v-neon-green: #00FF41;
@@ -174,16 +172,13 @@ def check_authorized_clearance():
     return True
 
 # ==============================================================================
-# 4. CHROMATIC SKU ENGINE
+# 4. SILNIK GRAFICZNY I RENDERER CAD-3D
 # ==============================================================================
 def get_vorteza_sku_hex(sku_name):
     palette = ["#B58863", "#D4AF37", "#8E6A4D", "#5E4633", "#A67C52", "#2C3E50", "#34495E", "#1A252F", "#16A085", "#27AE60", "#7F8C8D", "#95A5A6", "#BDC3C7", "#E67E22", "#D35400", "#C0392B", "#E74C3C", "#8E44AD", "#9B59B6", "#2980B9", "#F1C40F", "#2ECC71", "#3498DB", "#E67E22", "#1ABC9C"]
     random.seed(sum(ord(c) for c in str(sku_name)))
     return random.choice(palette)
 
-# ==============================================================================
-# 5. RENDERER CAD-3D STACK (EXPLICIT VERTEX ENGINE)
-# ==============================================================================
 def build_box_cad_geometry(x, y, z, dx, dy, dz, color, name):
     vx = [x, x+dx, x+dx, x, x, x+dx, x+dx, x]
     vy = [y, y, y+dy, y+dy, y, y, y+dy, y+dy]
@@ -202,8 +197,7 @@ def render_vorteza_cad_3d(vehicle_specs, cargo_stacks):
     fig = go.Figure()
     L, W, H = vehicle_specs['L'], vehicle_specs['W'], vehicle_specs['H']
     fig.add_trace(go.Mesh3d(x=[0, L, L, 0], y=[0, 0, W, W], z=[-15, -15, -15, -15], color='#151515', opacity=1, hoverinfo='skip'))
-    axles = vehicle_specs.get('axles', 3)
-    rear_base_x = L - 450 if L > 800 else L - 180
+    axles, rear_base_x = vehicle_specs.get('axles', 3), (L - 450 if L > 800 else L - 180)
     for a in range(axles):
         ax_x = rear_base_x + (a * 145)
         if ax_x < L:
@@ -211,21 +205,19 @@ def render_vorteza_cad_3d(vehicle_specs, cargo_stacks):
                 fig.add_trace(go.Mesh3d(x=[ax_x-60, ax_x+60, ax_x+60, ax_x-60], y=[side, side, side+18, side+18], z=[-85, -85, -15, -15], color='#000', opacity=1, hoverinfo='skip'))
                 fig.add_trace(go.Mesh3d(x=[ax_x-25, ax_x+25, ax_x+25, ax_x-25], y=[side-2, side-2, side, side], z=[-60, -60, -35, -35], color='#B58863', opacity=0.9, hoverinfo='skip'))
     cab_l = vehicle_specs.get('cab_l', 230)
-    fig.add_trace(go.Mesh3d(x=[-cab_l, 0, 0, -cab_l, -cab_l, 0, 0, -cab_l], y=[-45, -45, W+45, W+45, -45, -45, W+45, W+45], z=[0, 0, 0, 0, H*1.05, H*1.05, H*1.05, H*1.05], i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6], color='#050505', opacity=1, name="UNIT_COMMAND_CAB"))
+    fig.add_trace(go.Mesh3d(x=[-cab_l, 0, 0, -cab_l, -cab_l, 0, 0, -cab_l], y=[-45, -45, W+45, W+45, -45, -45, W+45, W+45], z=[0, 0, 0, 0, H*1.05, H*1.05, H*1.05, H*1.05], i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6], color='#050505', opacity=1))
     skeleton_lines = [([0, L], [0, 0], [0, 0]), ([0, L], [W, W], [0, 0]), ([0, 0], [0, W], [0, 0]), ([L, L], [0, W], [0, 0]), ([0, 0], [0, 0], [0, H]), ([0, 0], [W, W], [0, H]), ([0, L], [0, 0], [H, H]), ([0, L], [W, W], [H, H]), ([L, L], [0, 0], [0, H]), ([L, L], [W, W], [0, H])]
-    for lx, ly, lz in skeleton_lines:
-        fig.add_trace(go.Scatter3d(x=lx, y=ly, z=lz, mode='lines', line=dict(color='#B58863', width=12), hoverinfo='skip'))
+    for lx, ly, lz in skeleton_lines: fig.add_trace(go.Scatter3d(x=lx, y=ly, z=lz, mode='lines', line=dict(color='#B58863', width=12), hoverinfo='skip'))
     for cluster in cargo_stacks:
         for unit in cluster['items']:
-            x, y, z = cluster['x'], cluster['y'], unit['z']
-            dx, dy, dz = unit['w_fit'], unit['l_fit'], unit['height']
-            cube_parts = build_box_cad_geometry(x, y, z, dx, dy, dz, get_vorteza_sku_hex(unit['name']), unit['name'])
-            for p in cube_parts: fig.add_trace(p)
+            x, y, z, dx, dy, dz = cluster['x'], cluster['y'], unit['z'], unit['w_fit'], unit['l_fit'], unit['height']
+            parts = build_box_cad_geometry(x, y, z, dx, dy, dz, get_vorteza_sku_hex(unit['name']), unit['name'])
+            for p in parts: fig.add_trace(p)
     fig.update_layout(scene=dict(aspectmode='data', xaxis_visible=False, yaxis_visible=False, zaxis_visible=False, camera=dict(eye=dict(x=2.5, y=2.5, z=2.0)), bgcolor='rgba(0,0,0,0)'), paper_bgcolor='rgba(0,0,0,0)', margin=dict(l=0, r=0, b=0, t=0), showlegend=False)
     return fig
 
 # ==============================================================================
-# 6. SUPREME OPTIMIZER ENGINE 24.0
+# 5. SUPREME OPTIMIZER ENGINE 24.0
 # ==============================================================================
 class V24SupremeEngine:
     @staticmethod
@@ -234,15 +226,15 @@ class V24SupremeEngine:
         placed_stacks, failed_units, total_weight = [], [], 0
         cx, cy, current_row_max_w = x_offset, 0, 0
         for unit in items_sorted:
-            if total_weight + unit['weight'] > vehicle['max_w']:
-                failed_units.append(unit); continue
+            if total_weight + unit['weight'] > vehicle['max_w']: failed_units.append(unit); continue
             is_stacked = False
             if unit.get('canStack', True):
                 for s in placed_stacks:
-                    if unit.get('allowRotation', True): dim_fit = (unit['width'] <= s['w'] and unit['length'] <= s['l']) or (unit['length'] <= s['w'] and unit['width'] <= s['l'])
-                    else: dim_fit = (unit['width'] <= s['w'] and unit['length'] <= s['l'])
+                    orient = [(unit['width'], unit['length']), (unit['length'], unit['width'])] if unit.get('allowRotation', True) else [(unit['width'], unit['length'])]
+                    dim_fit = any(fw <= s['w'] and fl <= s['l'] for fw, fl in orient)
                     if dim_fit and (s['curH'] + unit['height'] <= vehicle['H']):
-                        u_copy = unit.copy(); u_copy['z'] = s['curH']; u_copy['w_fit'], u_copy['l_fit'] = s['w'], s['l']; s['items'].append(u_copy); s['curH'] += unit['height']; total_weight += unit['weight']; is_stacked = True; break
+                        u_copy = unit.copy(); u_copy['z'] = s['curH']; u_copy['w_fit'], u_copy['l_fit'] = s['w'], s['l']
+                        s['items'].append(u_copy); s['curH'] += unit['height']; total_weight += unit['weight']; is_stacked = True; break
             if is_stacked: continue
             is_placed, orientations = False, [(unit['width'], unit['length']), (unit['length'], unit['width'])] if unit.get('allowRotation', True) else [(unit['width'], unit['length'])]
             for fw, fl in orientations:
@@ -255,27 +247,20 @@ class V24SupremeEngine:
         return placed_stacks, total_weight, failed_units, ldm_res
 
 # ==============================================================================
-# 7. ANALITYKA INŻYNIERYJNA
+# 6. ANALITYKA I DATA I/O
 # ==============================================================================
-def process_load_bal_ui(vehicle, stacks, L_dict):
+def process_load_bal_ui(vehicle, stacks, L):
     if not stacks: return
     t_moment, t_weight = 0, 0
     for s in stacks:
-        for it in s['items']:
-            item_center_x = s['x'] + (it['w_fit'] / 2)
-            t_moment += (item_center_x * it['weight']); t_weight += it['weight']
-    cog_x = t_moment / t_weight if t_weight > 0 else 0
-    cog_p = (cog_x / vehicle['L']) * 100
-    st.markdown(f"### ⚖️ {L_dict['cog']}")
-    marker_clr = "#00FF41" if 35 < cog_p < 65 else "#FF3131"
+        for it in s['items']: t_moment += ((s['x'] + it['w_fit']/2) * it['weight']); t_weight += it['weight']
+    cog_p = (t_moment / t_weight / vehicle['L']) * 100 if t_weight > 0 else 0
+    st.markdown(f"### ⚖️ {L['cog']}"); marker_clr = "#00FF41" if 35 < cog_p < 65 else "#FF3131"
     st.markdown(f'<div class="v-rail-track"><div class="v-cog-pointer" style="left: {cog_p}%; background: {marker_clr}; box-shadow: 0 0 40px {marker_clr};"></div></div>', unsafe_allow_html=True)
-    if cog_p < 35: st.warning(L_dict['bal_front'])
-    elif cog_p > 65: st.warning(L_dict['bal_rear'])
-    else: st.success(L_dict['bal_ok'])
+    if cog_p < 35: st.warning(L['bal_front'])
+    elif cog_p > 65: st.warning(L['bal_rear'])
+    else: st.success(L['bal_ok'])
 
-# ==============================================================================
-# 8. DATA I/O
-# ==============================================================================
 def db_core_load():
     if os.path.exists('products.json'):
         try:
@@ -287,36 +272,30 @@ def db_core_save(data):
     with open('products.json', 'w', encoding='utf-8') as f: json.dump(data, f, indent=4, ensure_ascii=False)
 
 # ==============================================================================
-# 9. GŁÓWNA ARCHITEKTURA (VORTEZA STACK)
+# 7. GŁÓWNA ARCHITEKTURA (VORTEZA STACK)
 # ==============================================================================
 def main():
     inject_vorteza_stack_ui()
     if not check_authorized_clearance(): return
     if 'v_manifest' not in st.session_state: st.session_state.v_manifest = []
     if 'lang' not in st.session_state: st.session_state.lang = "PL"
-    
-    L = LANGUAGES[st.session_state.lang]
-    inventory = db_core_load()
+    L, inventory = LANGUAGES[st.session_state.lang], db_core_load()
 
+    # TOP BAR
     hc1, hc2, hc3 = st.columns([1, 4, 1])
-    with hc1:
-        logo_b64 = load_vorteza_asset_b64('logo_vorteza.png')
-        if logo_b64: st.markdown(f'<img src="data:image/png;base64,{logo_b64}" width="180">', unsafe_allow_html=True)
-        else: st.markdown("### VORTEZA")
-    with hc2:
-        st.markdown(f"<h1>{L['title']}</h1>", unsafe_allow_html=True)
-    with hc3:
+    with hc1: st.markdown("### VORTEZA")
+    with hc2: st.markdown(f"<h1>{L['title']}</h1>", unsafe_allow_html=True)
+    with hc3: 
         if st.button(L['terminate']): st.session_state.authorized = False; st.rerun()
 
+    # SIDEBAR MISSION CONTROL
     with st.sidebar:
         st.session_state.lang = st.selectbox("🌐 LANGUAGE", ["PL", "ENG", "ES", "DE"], index=["PL", "ENG", "ES", "DE"].index(st.session_state.lang))
         L = LANGUAGES[st.session_state.lang]
         st.markdown(f"### 📡 {L['fleet']}")
-        v_key = st.selectbox(L['unit'], list(FLEET_MASTER_DATA.keys()))
-        veh = FLEET_MASTER_DATA[v_key]
-        st.divider()
-        st.markdown(f"### ⚖️ {L['pos']}")
+        veh = FLEET_MASTER_DATA[st.selectbox(L['unit'], list(FLEET_MASTER_DATA.keys()))]
         x_shift = st.slider(L['offset'], 0, veh['L']-200, 0)
+        
         st.divider()
         st.markdown(f"### 📥 {L['cargo']}")
         sel_sku = st.selectbox(L['sku_sel'], [p['name'] for p in inventory], index=None)
@@ -326,79 +305,70 @@ def main():
             st.markdown(f"<div class='v-badge-unit'>SKU: {sel_sku}<br>STANDARD: {ipc} PCS/CASE</div>", unsafe_allow_html=True)
             p_qty = st.number_input(L['qty'], min_value=1, value=int(ipc))
             if st.button(L['add']):
-                u_entry = p_ref.copy(); u_entry['p_act'] = p_qty
-                st.session_state.v_manifest.append(u_entry); st.rerun()
-        
+                # Sprawdzamy czy SKU już jest w manifeście, jeśli tak - sumujemy
+                found = False
+                for item in st.session_state.v_manifest:
+                    if item['name'] == sel_sku:
+                        item['p_act'] += p_qty; found = True; break
+                if not found:
+                    u_entry = p_ref.copy(); u_entry['p_act'] = p_qty; st.session_state.v_manifest.append(u_entry)
+                st.rerun()
+
+        # SMART EDIT MANIFEST (ZAGREGOWANY)
         if st.session_state.v_manifest:
             st.divider()
             st.markdown(f"### 📝 {L['edit_m']}")
             df_m = pd.DataFrame(st.session_state.v_manifest)
+            # Pokazujemy tylko Nazwę i Ilość dla czytelności (brak duplikatów)
             res_edit = st.data_editor(df_m[['name', 'p_act']], column_config={"p_act": st.column_config.NumberColumn(L['qty'], min_value=0)}, use_container_width=True, num_rows="dynamic")
             if st.button(L['update']):
-                updated = []
-                for _, r in res_edit.iterrows():
-                    if r['p_act'] > 0:
-                        orig = next((p for p in inventory if p['name'] == r['name']), None)
+                new_manifest = []
+                for _, row in res_edit.iterrows():
+                    if row['p_act'] > 0:
+                        orig = next((p for p in inventory if p['name'] == row['name']), None)
                         if orig: 
-                            new_it = orig.copy(); new_it['p_act'] = r['p_act']
-                            updated.append(new_it)
-                st.session_state.v_manifest = updated; st.rerun()
+                            u_entry = orig.copy(); u_entry['p_act'] = row['p_act']; new_manifest.append(u_entry)
+                st.session_state.v_manifest = new_manifest; st.rerun()
         if st.button(L['purge']): st.session_state.v_manifest = []; st.rerun()
 
+    # WORKSPACE
     tab_planner, tab_db, tab_terminal = st.tabs([f"📊 {L['title']}", f"📦 {L['inventory']}", f"⚙️ {L['logs']}"])
 
     with tab_planner:
         if st.session_state.v_manifest:
-            total_kg = sum(float(u['weight']) for u in st.session_state.v_manifest)
-            k1, k2, k3, k4 = st.columns(4)
-            k1.metric(L['cases'], len(st.session_state.v_manifest))
-            k2.metric(L['pcs'], sum(int(u.get('p_act', 1)) for u in st.session_state.v_manifest))
-            k3.metric(L['weight'], f"{total_kg} KG")
-            k4.metric(L['util'], f"{(total_kg/veh['max_w'])*100:.1f}%")
-
-            rem_manifest = []
+            # Rozmnażamy manifest na fizyczne opakowania przed pakowaniem
+            engine_input = []
             for entry in st.session_state.v_manifest:
                 n_cases = math.ceil(entry['p_act'] / entry.get('itemsPerCase', 1))
-                for _ in range(n_cases): rem_manifest.append(entry.copy())
+                for _ in range(n_cases): engine_input.append(entry.copy())
+            
+            stacks, weight, failed, ldm = V24SupremeEngine.solve(engine_input, veh, x_shift)
+            k1, k2, k3, k4 = st.columns(4)
+            k1.metric(L['cases'], len(engine_input))
+            k2.metric(L['pcs'], sum(it['p_act'] for it in st.session_state.v_manifest))
+            k3.metric(L['weight'], f"{weight} KG")
+            k4.metric(L['util'], f"{(weight/veh['max_w'])*100:.1f}%")
 
-            assigned_fleet = []
-            while rem_manifest:
-                res_s, res_w, n_p, ldm_r = V24SupremeEngine.solve(rem_manifest, veh, x_offset=x_shift)
-                if not res_s: break
-                assigned_fleet.append({"stacks": res_s, "weight": res_w, "ldm": ldm_r})
-                rem_manifest = n_p
-
-            for idx, truck in enumerate(assigned_fleet):
-                st.markdown('<div class="v-tile-apex">', unsafe_allow_html=True)
-                st.markdown(f"### {L['mission']} #{idx+1} | {v_key}")
-                v_col, d_col = st.columns([2.8, 1])
-                with v_col:
-                    st.plotly_chart(render_vorteza_cad_3d(veh, truck['stacks']), use_container_width=True)
-                    process_load_bal_ui(veh, truck['stacks'], L)
-                with d_col:
-                    st.markdown(f"**{L['kpi']}:**")
-                    st.write(f"LDM: **{truck['ldm']:.2f} m**")
-                    st.write(f"NET: **{truck['weight']} kg**")
-                    st.divider()
-                    sku_agg = pd.Series([it['name'] for s in truck['stacks'] for it in s['items']]).value_counts().reset_index()
-                    sku_agg.columns = [L['sku_ident'], 'QTY']
-                    h_table = f'<table class="v-table-tactical"><tr><th>SKU</th><th>QTY</th></tr>'
-                    for _, r in sku_agg.iterrows():
-                        c_h = get_vorteza_sku_hex(r[L['sku_ident']])
-                        h_table += f'<tr><td><span style="color:{c_h}">■</span> {r[L["sku_ident"]]}</td><td>{r["QTY"]}</td></tr>'
-                    st.markdown(h_table + '</table>', unsafe_allow_html=True)
-                st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown('<div class="v-tile-apex">', unsafe_allow_html=True)
+            st.plotly_chart(render_vorteza_cad_3d(veh, stacks), use_container_width=True)
+            process_load_bal_ui(veh, stacks, L)
+            
+            # Tabela Podsumowująca Załadunek
+            sku_agg = pd.Series([it['name'] for s in stacks for it in s['items']]).value_counts().reset_index()
+            sku_agg.columns = [L['sku_ident'], 'CASES']
+            h_table = f'<table class="v-table-tactical"><tr><th>SKU</th><th>{L["cases"]}</th></tr>'
+            for _, r in sku_agg.iterrows():
+                h_table += f'<tr><td><span style="color:{get_vorteza_sku_hex(r[L["sku_ident"]])}">■</span> {r[L["sku_ident"]]}</td><td>{r["CASES"]}</td></tr>'
+            st.markdown(h_table + '</table>', unsafe_allow_html=True)
+            st.markdown('</div>', unsafe_allow_html=True)
         else: st.info(L['no_data'])
 
     with tab_db:
         st.markdown(f"### 📦 {L['inventory']}")
-        df_display = pd.DataFrame(inventory)
-        edt_db = st.data_editor(df_display, use_container_width=True, num_rows="dynamic", key="v24_editor_final")
-        if st.button(L['save_db'], type="primary"):
-            db_core_save(edt_db.to_dict('records')); st.success(L['sync'])
+        new_db = st.data_editor(pd.DataFrame(inventory), use_container_width=True, num_rows="dynamic")
+        if st.button(L['save_db'], type="primary"): db_core_save(new_db.to_dict('records')); st.success(L['sync'])
 
     with tab_terminal:
         st.code(f"SYSTEM: VORTEZA STACK v24.0\nTIME: {datetime.now()}\nLANG: {st.session_state.lang}", language="bash")
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()
