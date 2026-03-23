@@ -60,40 +60,34 @@ def load_products():
             {"name": "Karton Zbiorczy", "width": 60, "length": 40, "height": 40, "weight": 20, "canStack": True, "itemsPerCase": 10}
         ]
 
-# --- 4. LOGIKA PAKOWANIA (PUNKT 1: ROTACJA + SHELF-PACKING) ---
+# --- 4. LOGIKA PAKOWANIA ---
 def pack_one_vehicle(remaining_items, vehicle):
     placed_stacks = []
     not_placed = []
     current_weight = 0
     max_reached_l = 0
     
-    # Sortowanie dla stabilności: największa powierzchnia podstawy na dół
     items_to_pack = sorted(remaining_items, key=lambda x: (x['length'] * x['width']), reverse=True)
 
-    # Parametry Shelf-Packing
-    shelf_x = 0      # Postęp wzdłuż długości (L)
-    shelf_y = 0      # Postęp wzdłuż szerokości (W)
-    shelf_max_w = 0  # Maksymalna szerokość aktualnego rzędu (oś X)
+    shelf_x = 0      
+    shelf_y = 0      
+    shelf_max_w = 0  
 
     for item in items_to_pack:
-        # Limit wagowy
         if current_weight + item['weight'] > vehicle['maxWeight']:
             not_placed.append(item)
             continue
             
         added = False
 
-        # PRÓBA PIĘTROWANIA (Stacking)
         if item.get('canStack', True):
             for s in placed_stacks:
-                # Sprawdź dopasowanie wymiarów (z uwzględnieniem rotacji stosu)
                 match = (item['width'] == s['width'] and item['length'] == s['length']) or \
                         (item['width'] == s['length'] and item['length'] == s['width'])
                 
                 if s['canStackBase'] and match and (s['currentH'] + item['height']) <= vehicle['H']:
                     it_copy = item.copy()
                     it_copy['z_pos'] = s['currentH']
-                    # Wizualne wyrównanie do podstawy stosu
                     it_copy['width'], it_copy['length'] = s['width'], s['length']
                     
                     s['items'].append(it_copy)
@@ -104,13 +98,11 @@ def pack_one_vehicle(remaining_items, vehicle):
         
         if added: continue
 
-        # NOWY STOS (Shelf Packing + Rotacja 90°)
         w, l = item['width'], item['length']
         orientations = [(w, l), (l, w)]
         
         found_spot = False
         for fit_w, fit_l in orientations:
-            # 1. Sprawdź miejsce w obecnym rzędzie (Y)
             if shelf_y + fit_l <= vehicle['W'] and shelf_x + fit_w <= vehicle['L']:
                 it_copy = item.copy()
                 it_copy['z_pos'] = 0
@@ -127,7 +119,6 @@ def pack_one_vehicle(remaining_items, vehicle):
                 found_spot = True
                 break
             
-            # 2. Próbuj otworzyć nowy rząd (X)
             elif shelf_x + shelf_max_w + fit_w <= vehicle['L'] and fit_l <= vehicle['W']:
                 shelf_x += shelf_max_w
                 shelf_y = 0
@@ -160,13 +151,11 @@ def draw_3d(placed_stacks, vehicle, color_map):
     fig = go.Figure()
     v_l, v_w, v_h = vehicle['L'], vehicle['W'], vehicle['H']
 
-    # Podłoga pojazdu
     fig.add_trace(go.Mesh3d(
         x=[0, v_l, v_l, 0], y=[0, 0, v_w, v_w], z=[0, 0, 0, 0],
         color='lightgrey', opacity=0.4, name="Podłoga"
     ))
     
-    # Obrys klatki naczepy
     edges = [
         ([0, v_l], [0, 0], [0, 0]), ([0, v_l], [v_w, v_w], [0, 0]), ([0, v_l], [0, 0], [v_h, v_h]), ([0, v_l], [v_w, v_w], [v_h, v_h]),
         ([0, 0], [0, v_w], [0, 0]), ([v_l, v_l], [0, v_w], [0, 0]), ([0, 0], [0, v_w], [v_h, v_h]), ([v_l, v_l], [0, v_w], [v_h, v_h]),
@@ -175,13 +164,11 @@ def draw_3d(placed_stacks, vehicle, color_map):
     for ex, ey, ez in edges:
         fig.add_trace(go.Scatter3d(x=ex, y=ey, z=ez, mode='lines', line=dict(color='black', width=1), hoverinfo='none'))
 
-    # Rysowanie ładunków
     for s in placed_stacks:
         for it in s['items']:
             x0, y0, z0 = s['x'], s['y'], it['z_pos']
             dx, dy, dz = it['width'], it['length'], it['height']
             
-            # Wierzchołki prostopadłościanu
             fig.add_trace(go.Mesh3d(
                 x=[x0, x0+dx, x0+dx, x0, x0, x0+dx, x0+dx, x0],
                 y=[y0, y0, y0+dy, y0+dy, y0, y0, y0+dy, y0+dy],
@@ -209,7 +196,6 @@ if check_password():
     if 'color_map' not in st.session_state:
         st.session_state.color_map = {p['name']: COLOR_PALETTE[i % len(COLOR_PALETTE)] for i, p in enumerate(prods)}
 
-    # PANEL BOCZNY
     with st.sidebar:
         st.title("🚛 Panel Sterowania")
         v_name = st.selectbox("Typ Pojazdu:", list(VEHICLES.keys()))
@@ -223,12 +209,17 @@ if check_password():
         if st.button("Dodaj do planu", use_container_width=True) and sel_p_name:
             p_ref = next(p for p in prods if p['name'] == sel_p_name)
             ipc = p_ref.get('itemsPerCase', 1)
-            # Dzielenie sztuk na jednostki transportowe (skrzynie/palety)
             num_units = math.ceil(qty / ipc)
             for i in range(num_units):
                 c = p_ref.copy()
                 remainder = qty % ipc
-                c['actual_items'] = remainder if (i == num_units - 1 and remainder != 0) else ipc
+                # Zapewnienie, że pole actual_items zawsze istnieje
+                if num_units == 1:
+                    c['actual_items'] = qty
+                elif i == num_units - 1 and remainder != 0:
+                    c['actual_items'] = remainder
+                else:
+                    c['actual_items'] = ipc
                 st.session_state.cargo.append(c)
             st.rerun()
             
@@ -236,18 +227,19 @@ if check_password():
             st.session_state.cargo = []
             st.rerun()
 
-    # WIDOK GŁÓWNY
     if st.session_state.cargo:
         st.header("📋 Lista Wysyłkowa")
         
-        # Przygotowanie danych do edytora
         df_cargo = pd.DataFrame(st.session_state.cargo)
-        # Sumujemy sztuki, aby użytkownik edytował łączną ilość
+        
+        # ZABEZPIECZENIE: Jeśli z jakiegoś powodu brakuje kolumny, tworzymy ją z domyślną wartością 1
+        if 'actual_items' not in df_cargo.columns:
+            df_cargo['actual_items'] = 1
+            
         sum_df = df_cargo.groupby('name').agg({'actual_items': 'sum'}).reset_index()
         
         st.info("Zmień wartość w kolumnie **actual_items** i naciśnij Enter. Wpisanie **0** usunie produkt.")
         
-        # EDYTOR LISTY (PUNKT 2: Edycja i kasowanie przy 0)
         edited_df = st.data_editor(
             sum_df, 
             hide_index=True, 
@@ -259,7 +251,6 @@ if check_password():
             key="main_cargo_editor"
         )
 
-        # Synchronizacja po edycji
         if not edited_df.equals(sum_df):
             new_cargo = []
             for _, row in edited_df.iterrows():
@@ -272,23 +263,26 @@ if check_password():
                         for i in range(num_u):
                             unit = p_orig.copy()
                             rem = total_q % ipc
-                            unit['actual_items'] = rem if (i == num_u - 1 and rem != 0) else ipc
+                            if num_u == 1:
+                                unit['actual_items'] = total_q
+                            elif i == num_u - 1 and rem != 0:
+                                unit['actual_items'] = rem
+                            else:
+                                unit['actual_items'] = ipc
                             new_cargo.append(unit)
             st.session_state.cargo = new_cargo
             st.rerun()
 
-        # SILNIK PAKOWANIA (Wiele pojazdów jeśli potrzeba)
         rem_cargo = [dict(i) for i in st.session_state.cargo]
         fleet_results = []
         
         while rem_cargo:
             stacks, weight, not_p, m_l = pack_one_vehicle(rem_cargo, veh)
-            if not stacks: # Jeśli nic nie weszło do pustego auta, przerwij by uniknąć pętli
+            if not stacks:
                 break
             fleet_results.append({"stacks": stacks, "weight": weight, "ldm": m_l/100})
             rem_cargo = not_p
 
-        # WYŚWIETLANIE WYNIKÓW
         st.divider()
         st.header(f"📊 Plan Załadunku: {len(fleet_results)} auto/a")
 
@@ -299,10 +293,8 @@ if check_password():
             with st.container():
                 st.subheader(f"🚛 Pojazd #{idx+1} ({v_name})")
                 
-                # Obliczenia metryk
                 all_items_in_truck = [it for s in truck['stacks'] for it in s['items']]
                 vol_used = sum(it['width']*it['length']*it['height'] for it in all_items_in_truck) / 1000000
-                vol_total = (veh['L']*veh['W']*veh['H']) / 1000000
                 floor_area_used = sum(s['width']*s['length'] for s in truck['stacks'])
                 floor_total = veh['L']*veh['W']
                 
@@ -318,10 +310,14 @@ if check_password():
                 with col_tab:
                     st.write("**📍 Specyfikacja załadunku:**")
                     df_in = pd.DataFrame(all_items_in_truck)
-                    res = df_in.groupby('name').agg({'actual_items': 'sum', 'name': 'count', 'weight': 'sum'}).rename(
-                        columns={'actual_items':'Sztuk','name':'Jednostek','weight':'Waga (kg)'}
-                    )
-                    st.dataframe(res.reset_index(), use_container_width=True, hide_index=True)
+                    if not df_in.empty:
+                        # Ponowne zabezpieczenie dla specyfikacji w tabeli
+                        if 'actual_items' not in df_in.columns: df_in['actual_items'] = 1
+                        
+                        res = df_in.groupby('name').agg({'actual_items': 'sum', 'weight': 'sum', 'name': 'count'}).rename(
+                            columns={'actual_items':'Sztuk','weight':'Waga (kg)', 'name': 'Jednostek'}
+                        )
+                        st.dataframe(res.reset_index()[['name', 'Sztuk', 'Jednostek', 'Waga (kg)']], use_container_width=True, hide_index=True)
                     
                     st.write("**Wykorzystanie DMC:**")
                     st.progress(min(truck['weight']/veh['maxWeight'], 1.0))
