@@ -4,7 +4,7 @@ import math
 class VEngine:
     @staticmethod
     def pack(cargo, veh, offset=0):
-        # Priorytet FFD: No-Stack > No-Rotation > Powierzchnia
+        # Sortowanie FFD: Stacking NO > Rotation NO > Powierzchnia
         items = sorted(cargo, key=lambda x: (not x.get('canStack', True), not x.get('allowRotation', True), x['width']*x['length']), reverse=True)
         stacks, failed, mass = [], [], 0
         cx, cy, r_max_w = offset, 0, 0
