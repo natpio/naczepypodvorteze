@@ -4,59 +4,45 @@ import plotly.graph_objects as go
 import math
 import pandas as pd
 
-# --- 1. KONFIGURACJA I STYLIZACJA PRO ---
+# --- 1. KONFIGURACJA I STYLIZACJA ULTRA-PRO ---
 st.set_page_config(
-    page_title="SQM Logistics Planner Pro", 
-    page_icon="🚛", 
-    layout="wide",
+    page_title="SQM Logistics Terminal | Ultra-Pro", 
+    page_icon="🚛",
+    layout="wide", 
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS dla wyglądu klasy Enterprise
+# Stylizacja High-Tech (Dark Mode z neonowymi akcentami)
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700&display=swap');
     
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    .main { background-color: #020617; color: #f1f5f9; }
     
-    .main { 
-        background-color: #f8fafc; 
-    }
-    
-    /* Stylizacja metryk */
+    /* Neonowe metryki */
     div[data-testid="stMetricValue"] {
-        font-size: 22px;
-        font-weight: 700;
-        color: #0f172a;
+        font-family: 'JetBrains Mono', monospace;
+        color: #00f2ff !important;
+        text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
     }
     
     /* Karty kontenerów */
     .st-emotion-cache-12w0u9p {
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 20px;
-        background-color: white;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    
-    /* Nagłówki sekcji */
-    .section-head {
-        padding: 8px 12px;
-        background-color: #f1f5f9;
-        border-left: 4px solid #3b82f6;
-        border-radius: 4px;
-        margin-bottom: 15px;
-        font-weight: 600;
+        background-color: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 12px !important;
     }
 
-    /* Przyciski */
     .stButton>button {
-        border-radius: 6px;
-        font-weight: 600;
-        transition: all 0.2s;
+        border-radius: 8px;
+        font-weight: 700;
+        background: linear-gradient(90deg, #3b82f6, #06b6d4);
+        border: none;
+        color: white;
+        transition: 0.3s;
     }
+    .stButton>button:hover { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); transform: scale(1.02); }
     </style>
     """, unsafe_allow_html=True)
 
@@ -65,35 +51,33 @@ def check_password():
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
     if not st.session_state.authenticated:
-        col1, col2, col3 = st.columns([1, 2, 1])
+        col1, col2, col3 = st.columns([1, 1.5, 1])
         with col2:
-            st.markdown("<h2 style='text-align: center;'>SQM LOGISTICS TERMINAL</h2>", unsafe_allow_html=True)
+            st.markdown("<h1 style='text-align: center; color: #00f2ff;'>SQM LOGISTICS</h1>", unsafe_allow_html=True)
             try:
                 master_password = str(st.secrets["password"])
             except:
-                st.error("Błąd konfiguracji: Klucz 'password' nie istnieje w Secrets.")
+                st.error("Błąd: Skonfiguruj klucz 'password' w Secrets.")
                 return False
-            
-            with st.form("Login Form"):
-                pwd = st.text_input("Hasło systemowe:", type="password")
-                if st.form_submit_button("Zaloguj", use_container_width=True):
-                    if pwd == master_password:
-                        st.session_state.authenticated = True
-                        st.rerun()
-                    else:
-                        st.error("Odmowa dostępu: Błędne hasło.")
-            return False
+            pwd = st.text_input("Hasło dostępu:", type="password")
+            if st.button("ZALOGUJ DO SYSTEMU", use_container_width=True):
+                if pwd == master_password:
+                    st.session_state.authenticated = True
+                    st.rerun()
+                else:
+                    st.error("Nieprawidłowe hasło.")
+        return False
     return True
 
-# --- 3. PARAMETRY POJAZDÓW I DANYCH ---
+# --- 3. DANE I POJAZDY ---
 VEHICLES = {
-    "BUS (Plandeka)": {"maxWeight": 1100, "L": 450, "W": 220, "H": 240, "color": "#f59e0b"},
-    "Solo 6m": {"maxWeight": 3500, "L": 600, "W": 245, "H": 250, "color": "#3b82f6"},
-    "Solo 7m": {"maxWeight": 7000, "L": 720, "W": 245, "H": 260, "color": "#10b981"},
-    "Naczepa FTL": {"maxWeight": 24000, "L": 1360, "W": 248, "H": 275, "color": "#ef4444"}
+    "Naczepa FTL Standard": {"maxWeight": 24000, "L": 1360, "W": 248, "H": 270},
+    "Naczepa MEGA": {"maxWeight": 24000, "L": 1360, "W": 248, "H": 300},
+    "Solo 7.2m": {"maxWeight": 7000, "L": 720, "W": 245, "H": 260},
+    "Bus 10EP": {"maxWeight": 1100, "L": 485, "W": 220, "H": 235}
 }
 
-COLOR_PALETTE = ["#6366f1", "#f43f5e", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#ec4899"]
+COLOR_PALETTE = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b", "#8b5cf6", "#06b6d4", "#f43f5e"]
 
 def load_products():
     try:
@@ -101,261 +85,186 @@ def load_products():
             return sorted(json.load(f), key=lambda x: x.get('name', ''))
     except:
         return [
-            {"name": "Paleta EPAL 1", "width": 80, "length": 120, "height": 140, "weight": 450, "canStack": True, "itemsPerCase": 1},
-            {"name": "Flightcase Mix", "width": 60, "length": 80, "height": 85, "weight": 80, "canStack": True, "itemsPerCase": 1},
-            {"name": "Skrzynia LED (Double)", "width": 120, "length": 100, "height": 110, "weight": 350, "canStack": False, "itemsPerCase": 1}
+            {"name": "Paleta EPAL", "width": 80, "length": 120, "height": 140, "weight": 400, "canStack": True, "itemsPerCase": 1},
+            {"name": "Case Mix 120x60", "width": 60, "length": 120, "height": 90, "weight": 110, "canStack": True, "itemsPerCase": 1},
+            {"name": "Skrzynia LED", "width": 120, "length": 100, "height": 115, "weight": 380, "canStack": False, "itemsPerCase": 1}
         ]
 
-# --- 4. SILNIK PAKOWANIA ---
-def pack_one_vehicle(remaining_items, vehicle):
-    placed_stacks = []
-    not_placed = []
-    current_weight = 0
-    max_reached_l = 0
+# --- 4. ZOPTYMALIZOWANY SILNIK PAKOWANIA ---
+@st.cache_data(show_spinner=False)
+def get_packed_fleet(cargo_list, vehicle):
+    """Przelicza plan tylko przy zmianie danych wejściowych."""
+    remaining_items = [dict(i) for i in cargo_list]
+    fleet = []
     
-    # Sortowanie: największa powierzchnia podstawy najpierw
-    items_to_pack = sorted(remaining_items, key=lambda x: (x['length'] * x['width']), reverse=True)
+    while remaining_items:
+        placed_stacks = []
+        not_placed = []
+        current_weight = 0
+        max_reached_l = 0
+        
+        # Sortowanie: największa podstawa najpierw
+        items_to_pack = sorted(remaining_items, key=lambda x: (x['length'] * x['width']), reverse=True)
+        shelf_x, shelf_y, shelf_max_w = 0, 0, 0
 
-    shelf_x, shelf_y, shelf_max_w = 0, 0, 0
-
-    for item in items_to_pack:
-        if current_weight + item['weight'] > vehicle['maxWeight']:
-            not_placed.append(item)
-            continue
+        for item in items_to_pack:
+            if current_weight + item['weight'] > vehicle['maxWeight']:
+                not_placed.append(item); continue
+                
+            added = False
+            # Próba piętrowania
+            if item.get('canStack', True):
+                for s in placed_stacks:
+                    match = (item['width'] == s['width'] and item['length'] == s['length'])
+                    if s['canStackBase'] and match and (s['currentH'] + item['height']) <= vehicle['H']:
+                        it_copy = item.copy()
+                        it_copy['z_pos'] = s['currentH']
+                        s['items'].append(it_copy)
+                        s['currentH'] += item['height']
+                        current_weight += item['weight']
+                        added = True; break
             
-        added = False
-        # Próba piętrowania
-        if item.get('canStack', True):
-            for s in placed_stacks:
-                match = (item['width'] == s['width'] and item['length'] == s['length']) or \
-                        (item['width'] == s['length'] and item['length'] == s['width'])
-                
-                if s['canStackBase'] and match and (s['currentH'] + item['height']) <= vehicle['H']:
-                    it_copy = item.copy()
-                    it_copy['z_pos'] = s['currentH']
-                    it_copy['width'], it_copy['length'] = s['width'], s['length']
-                    s['items'].append(it_copy)
-                    s['currentH'] += item['height']
-                    current_weight += item['weight']
-                    added = True
-                    break
+            if not added:
+                # Nowy stos (Rotacja 90°)
+                for w, l in [(item['width'], item['length']), (item['length'], item['width'])]:
+                    if shelf_y + l <= vehicle['W'] and shelf_x + w <= vehicle['L']:
+                        it_copy = item.copy(); it_copy['z_pos'] = 0
+                        placed_stacks.append({
+                            'x': shelf_x, 'y': shelf_y, 'width': w, 'length': l, 
+                            'currentH': item['height'], 'canStackBase': item.get('canStack', True), 'items': [it_copy]
+                        })
+                        shelf_y += l; shelf_max_w = max(shelf_max_w, w)
+                        added = True; break
+                    elif shelf_x + shelf_max_w + w <= vehicle['L'] and l <= vehicle['W']:
+                        shelf_x += shelf_max_w; shelf_y = 0; shelf_max_w = w
+                        it_copy = item.copy(); it_copy['z_pos'] = 0
+                        placed_stacks.append({
+                            'x': shelf_x, 'y': shelf_y, 'width': w, 'length': l, 
+                            'currentH': item['height'], 'canStackBase': item.get('canStack', True), 'items': [it_copy]
+                        })
+                        shelf_y += l; added = True; break
+
+            if added:
+                current_weight += item['weight']
+                max_reached_l = max(max_reached_l, shelf_x + shelf_max_w)
+            else:
+                not_placed.append(item)
         
-        if added: continue
-
-        # Nowy stos (Shelf Packing z rotacją 90 stopni)
-        w, l = item['width'], item['length']
-        orientations = [(w, l), (l, w)]
-        
-        found_spot = False
-        for fit_w, fit_l in orientations:
-            # Miejsce w obecnym rzędzie
-            if shelf_y + fit_l <= vehicle['W'] and shelf_x + fit_w <= vehicle['L']:
-                it_copy = item.copy()
-                it_copy['z_pos'] = 0
-                it_copy['width'], it_copy['length'] = fit_w, fit_l
-                placed_stacks.append({
-                    'x': shelf_x, 'y': shelf_y, 'width': fit_w, 'length': fit_l,
-                    'currentH': item['height'], 'canStackBase': item.get('canStack', True),
-                    'items': [it_copy]
-                })
-                shelf_y += fit_l
-                shelf_max_w = max(shelf_max_w, fit_w)
-                found_spot = True
-                break
-            # Nowy rząd
-            elif shelf_x + shelf_max_w + fit_w <= vehicle['L'] and fit_l <= vehicle['W']:
-                shelf_x += shelf_max_w
-                shelf_y = 0
-                shelf_max_w = fit_w
-                it_copy = item.copy()
-                it_copy['z_pos'] = 0
-                it_copy['width'], it_copy['length'] = fit_w, fit_l
-                placed_stacks.append({
-                    'x': shelf_x, 'y': shelf_y, 'width': fit_w, 'length': fit_l,
-                    'currentH': item['height'], 'canStackBase': item.get('canStack', True),
-                    'items': [it_copy]
-                })
-                shelf_y += fit_l
-                found_spot = True
-                break
-
-        if found_spot:
-            current_weight += item['weight']
-            max_reached_l = max(max_reached_l, shelf_x + shelf_max_w)
-        else:
-            not_placed.append(item)
+        if not placed_stacks: break
+        fleet.append({"stacks": placed_stacks, "weight": current_weight, "ldm": max_reached_l/100})
+        remaining_items = not_placed
                 
-    return placed_stacks, current_weight, not_placed, max_reached_l
+    return fleet
 
-# --- 5. WIZUALIZACJA 3D (KAŻDA SKRZYNIA OSOBNO) ---
+# --- 5. WYDAJNA WIZUALIZACJA 3D (SINGLE-TRACE) ---
 def draw_3d_pro(placed_stacks, vehicle, color_map):
     fig = go.Figure()
     v_l, v_w, v_h = vehicle['L'], vehicle['W'], vehicle['H']
 
-    # Podłoga pojazdu
-    fig.add_trace(go.Mesh3d(
-        x=[0, v_l, v_l, 0], y=[0, 0, v_w, v_w], z=[0, 0, 0, 0],
-        color='#1e293b', opacity=0.6, name="Podłoga", hoverinfo='skip'
-    ))
+    # Podłoga i obrys naczepy (Neon)
+    fig.add_trace(go.Mesh3d(x=[0, v_l, v_l, 0], y=[0, 0, v_w, v_w], z=[0, 0, 0, 0], color='#1e293b', opacity=1.0, hoverinfo='skip'))
     
-    # Rysowanie każdej skrzyni z osobna (Mesh + Scatter3d dla krawędzi)
+    # Krawędzie naczepy
+    fig.add_trace(go.Scatter3d(
+        x=[0, v_l, v_l, 0, 0, None, 0, v_l, v_l, 0, 0, None, 0, 0, None, v_l, v_l, None, v_l, v_l, None, 0, 0],
+        y=[0, 0, v_w, v_w, 0, None, 0, 0, v_w, v_w, 0, None, 0, 0, None, 0, 0, None, v_w, v_w, None, v_w, v_w],
+        z=[0, 0, 0, 0, 0, None, v_h, v_h, v_h, v_h, v_h, None, 0, v_h, None, 0, v_h, None, 0, v_h, None, 0, v_h],
+        mode='lines', line=dict(color='#00f2ff', width=3), hoverinfo='skip'
+    ))
+
+    # Optymalizacja krawędzi skrzyń: jeden trace zamiast setek
+    edge_x, edge_y, edge_z = [], [], []
+
     for s in placed_stacks:
         for it in s['items']:
-            x0, y0, z0 = s['x'], s['y'], it['z_pos']
-            dx, dy, dz = it['width'], it['length'], it['height']
-            color = color_map.get(it['name'], "#64748b")
+            x, y, z = s['x'], s['y'], it['z_pos']
+            dx, dy, dz = it.get('width', s['width']), it.get('length', s['length']), it['height']
+            color = color_map.get(it['name'], "#3b82f6")
             
-            # 1. Bryła (Mesh)
+            # Bryła
             fig.add_trace(go.Mesh3d(
-                x=[x0, x0+dx, x0+dx, x0, x0, x0+dx, x0+dx, x0],
-                y=[y0, y0, y0+dy, y0+dy, y0, y0, y0+dy, y0+dy],
-                z=[z0, z0, z0, z0, z0+dz, z0+dz, z0+dz, z0+dz],
+                x=[x, x+dx, x+dx, x, x, x+dx, x+dx, x],
+                y=[y, y, y+dy, y+dy, y, y, y+dy, y+dy],
+                z=[z, z, z, z, z+dz, z+dz, z+dz, z+dz],
                 i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6],
-                opacity=1.0, color=color, flatshading=True, name=it['name'],
-                hovertemplate=f"<b>{it['name']}</b><br>Z: {z0}cm<br>{dx}x{dy}x{dz}cm<extra></extra>"
+                opacity=0.85, color=color, flatshading=True, name=it['name']
             ))
             
-            # 2. Krawędzie (czarne obramowanie każdej skrzyni)
-            # Definicja 12 krawędzi prostopadłościanu
-            lines = [
-                ([x0, x0+dx], [y0, y0], [z0, z0]), ([x0+dx, x0+dx], [y0, y0+dy], [z0, z0]),
-                ([x0+dx, x0], [y0+dy, y0+dy], [z0, z0]), ([x0, x0], [y0+dy, y0], [z0, z0]),
-                ([x0, x0+dx], [y0, y0], [z0+dz, z0+dz]), ([x0+dx, x0+dx], [y0, y0+dy], [z0+dz, z0+dz]),
-                ([x0+dx, x0], [y0+dy, y0+dy], [z0+dz, z0+dz]), ([x0, x0], [y0+dy, y0], [z0+dz, z0+dz]),
-                ([x0, x0], [y0, y0], [z0, z0+dz]), ([x0+dx, x0+dx], [y0, y0], [z0, z0+dz]),
-                ([x0+dx, x0+dx], [y0+dy, y0+dy], [z0, z0+dz]), ([x0, x0], [y0+dy, y0+dy], [z0, z0+dz])
-            ]
-            for lx, ly, lz in lines:
-                fig.add_trace(go.Scatter3d(
-                    x=lx, y=ly, z=lz, mode='lines', 
-                    line=dict(color='black', width=3), hoverinfo='skip', showlegend=False
-                ))
+            # Dodawanie krawędzi do zbiorczej listy
+            ex = [x, x+dx, x+dx, x, x, None, x, x+dx, x+dx, x, x, None, x, x, None, x+dx, x+dx, None, x+dx, x+dx, None, x, x]
+            ey = [y, y, y+dy, y+dy, y, None, y, y, y+dy, y+dy, y, None, y, y, None, y, y, None, y+dy, y+dy, None, y+dy, y+dy]
+            ez = [z, z, z, z, z, None, z+dz, z+dz, z+dz, z+dz, z+dz, None, z, z+dz, None, z, z+dz, None, z, z+dz, None, z, z+dz]
+            edge_x.extend(ex); edge_y.extend(ey); edge_z.extend(ez); edge_x.append(None); edge_y.append(None); edge_z.append(None)
+
+    fig.add_trace(go.Scatter3d(x=edge_x, y=edge_y, z=edge_z, mode='lines', line=dict(color='black', width=2), hoverinfo='skip'))
 
     fig.update_layout(
         scene=dict(
-            xaxis=dict(title='Długość (cm)', range=[0, v_l], backgroundcolor="#f8fafc"),
-            yaxis=dict(title='Szerokość (cm)', range=[0, v_w], backgroundcolor="#f8fafc"),
-            zaxis=dict(title='Wysokość (cm)', range=[0, v_h], backgroundcolor="#f1f5f9"),
-            aspectmode='manual', aspectratio=dict(x=v_l/v_w, y=1, z=v_h/v_w),
-            camera=dict(eye=dict(x=1.6, y=1.6, z=1.3))
+            xaxis=dict(title='DL (cm)', backgroundcolor="#020617", gridcolor="#1e293b"),
+            yaxis=dict(title='SZ (cm)', backgroundcolor="#020617", gridcolor="#1e293b"),
+            zaxis=dict(title='WY (cm)', backgroundcolor="#020617", gridcolor="#1e293b"),
+            aspectmode='manual', aspectratio=dict(x=v_l/v_w*0.7, y=1, z=v_h/v_w*0.7)
         ),
-        margin=dict(l=0, r=0, b=0, t=0), showlegend=False,
-        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)'
+        margin=dict(l=0, r=0, b=0, t=0), paper_bgcolor='rgba(0,0,0,0)', showlegend=False
     )
     return fig
 
-# --- 6. INTERFEJS UŻYTKOWNIKA ---
+# --- 6. APLIKACJA GŁÓWNA ---
 if check_password():
     if 'cargo' not in st.session_state: st.session_state.cargo = []
     prods = load_products()
-    
     if 'color_map' not in st.session_state:
         st.session_state.color_map = {p['name']: COLOR_PALETTE[i % len(COLOR_PALETTE)] for i, p in enumerate(prods)}
 
     with st.sidebar:
-        st.title("SQM Logistics")
-        with st.expander("⚙️ Konfiguracja Transportu", expanded=True):
-            v_name = st.selectbox("Pojazd docelowy:", list(VEHICLES.keys()))
-            veh = VEHICLES[v_name]
-            st.caption(f"DMC: {veh['maxWeight']}kg | Wymiary: {veh['L']}x{veh['W']}cm")
-
-        st.subheader("📦 Dodaj do załadunku")
-        sel_p_name = st.selectbox("Produkt / Case:", [p['name'] for p in prods], index=None, placeholder="Wybierz...")
-        qty = st.number_input("Ilość sztuk:", min_value=1, value=1)
+        st.markdown("<h2 style='color: #00f2ff;'>🚛 STEROWANIE</h2>", unsafe_allow_html=True)
+        v_name = st.selectbox("POJAZD:", list(VEHICLES.keys()))
+        veh = VEHICLES[v_name]
         
-        c1, c2 = st.columns(2)
-        with c1:
-            if st.button("➕ Dodaj", use_container_width=True) and sel_p_name:
-                p_ref = next(p for p in prods if p['name'] == sel_p_name)
-                ipc = p_ref.get('itemsPerCase', 1)
-                num_units = math.ceil(qty / ipc)
-                for i in range(num_units):
-                    unit = p_ref.copy()
-                    remainder = qty % ipc
-                    unit['actual_items'] = remainder if (i == num_units - 1 and remainder != 0) else ipc
-                    st.session_state.cargo.append(unit)
-                st.rerun()
-        with c2:
-            if st.button("🗑️ Reset", use_container_width=True):
-                st.session_state.cargo = []
-                st.rerun()
-
-    # WIDOK GŁÓWNY
-    if st.session_state.cargo:
-        st.markdown("<div class='section-head'>📋 MANIFEST ŁADUNKOWY (EDYTOR)</div>", unsafe_allow_html=True)
+        st.divider()
+        st.subheader("📦 DODAJ SPRZĘT")
+        sel_p = st.selectbox("SPRZĘT:", [p['name'] for p in prods], index=None)
+        qty = st.number_input("ILOŚĆ:", min_value=1, value=1)
         
-        df_cargo = pd.DataFrame(st.session_state.cargo)
-        sum_df = df_cargo.groupby('name').agg({'actual_items': 'sum'}).reset_index()
-        
-        edited_df = st.data_editor(
-            sum_df, 
-            hide_index=True, 
-            use_container_width=True,
-            column_config={
-                "name": st.column_config.Column("Produkt", disabled=True),
-                "actual_items": st.column_config.NumberColumn("Sztuk Razem", min_value=0, step=1)
-            },
-            key="pro_cargo_editor"
-        )
-
-        # Synchronizacja edytora z sesją
-        if not edited_df.equals(sum_df):
-            new_cargo = []
-            for _, row in edited_df.iterrows():
-                if row['actual_items'] > 0:
-                    p_orig = next((p for p in prods if p['name'] == row['name']), None)
-                    if p_orig:
-                        ipc = p_orig.get('itemsPerCase', 1)
-                        num_u = math.ceil(row['actual_items'] / ipc)
-                        for i in range(num_u):
-                            unit = p_orig.copy()
-                            rem = row['actual_items'] % ipc
-                            unit['actual_items'] = rem if (i == num_u - 1 and rem != 0) else ipc
-                            new_cargo.append(unit)
-            st.session_state.cargo = new_cargo
+        if st.button("DODAJ DO PLANU", use_container_width=True) and sel_p:
+            p_ref = next(p for p in prods if p['name'] == sel_p)
+            for _ in range(qty): st.session_state.cargo.append(p_ref.copy())
             st.rerun()
+            
+        if st.button("RESETUJ WSZYSTKO", use_container_width=True, type="secondary"):
+            st.session_state.cargo = []; st.rerun()
 
-        # OBLICZENIA FLOTY
-        rem_cargo = [dict(i) for i in st.session_state.cargo]
-        fleet_results = []
+    if st.session_state.cargo:
+        # Edytor listy
+        st.markdown("<h3 style='color: #00f2ff;'>📋 MANIFEST OPERACYJNY</h3>", unsafe_allow_html=True)
+        df_cargo = pd.DataFrame(st.session_state.cargo)
+        sum_df = df_cargo.groupby('name').size().reset_index(name='ilość')
         
-        while rem_cargo:
-            stacks, weight, not_p, m_l = pack_one_vehicle(rem_cargo, veh)
-            if not stacks: break
-            fleet_results.append({"stacks": stacks, "weight": weight, "ldm": m_l/100})
-            rem_cargo = not_p
+        edited = st.data_editor(sum_df, hide_index=True, use_container_width=True, key="cargo_editor")
+        if not edited.equals(sum_df):
+            new_c = []
+            for _, r in edited.iterrows():
+                if r['ilość'] > 0:
+                    orig = next(p for p in prods if p['name'] == r['name'])
+                    new_c.extend([orig.copy() for _ in range(r['ilość'])])
+            st.session_state.cargo = new_c; st.rerun()
 
-        st.markdown(f"### 🚛 Potrzebne pojazdy: **{len(fleet_results)}**")
-
-        for idx, truck in enumerate(fleet_results):
-            with st.container():
-                st.markdown(f"<div class='section-head'>POJAZD #{idx+1} ({v_name})</div>", unsafe_allow_html=True)
-                
-                # Metryki
-                all_items = [it for s in truck['stacks'] for it in s['items']]
-                vol_used = sum(it['width']*it['length']*it['height'] for it in all_items) / 1000000
-                vol_total = (veh['L']*veh['W']*veh['H']) / 1000000
-                
-                m1, m2, m3, m4 = st.columns(4)
-                m1.metric("LDM", f"{truck['ldm']:.2f} m")
-                m2.metric("Waga", f"{truck['weight']} / {veh['maxWeight']} kg")
-                m3.metric("Wypełnienie", f"{int(vol_used/vol_total*100)}%")
-                m4.metric("Jednostek", len(all_items))
-
-                col_viz, col_tab = st.columns([2, 1])
-                with col_viz:
-                    st.plotly_chart(draw_3d_pro(truck['stacks'], veh, st.session_state.color_map), use_container_width=True, key=f"truck_{idx}")
-                
-                with col_tab:
-                    st.write("**Specyfikacja załadunku:**")
-                    res_df = pd.DataFrame(all_items).groupby('name').size().reset_index(name='Ilość Case')
-                    st.dataframe(res_df, use_container_width=True, hide_index=True)
-                    
-                    st.caption("Obciążenie DMC:")
-                    st.progress(min(truck['weight']/veh['maxWeight'], 1.0))
-                st.divider()
-
-        if rem_cargo:
-            st.error(f"🚨 Krytyczne: {len(rem_cargo)} elementów nie zmieściło się! Sprawdź wagę lub wymiary.")
+        # Obliczenia i wyniki
+        fleet = get_packed_fleet(st.session_state.cargo, veh)
+        
+        for idx, truck in enumerate(fleet):
+            st.markdown(f"<div style='border-left: 4px solid #00f2ff; padding-left: 15px;'><h4>AUTO #{idx+1} | {v_name}</h4></div>", unsafe_allow_html=True)
+            col_viz, col_met = st.columns([2.5, 1])
+            
+            with col_viz:
+                st.plotly_chart(draw_3d_pro(truck['stacks'], veh, st.session_state.color_map), use_container_width=True, key=f"p_{idx}")
+            
+            with col_met:
+                st.metric("LDM", f"{truck['ldm']:.2f} m")
+                st.metric("WAGA ŁADUNKU", f"{truck['weight']} kg")
+                st.write("**OBCIĄŻENIE DMC:**")
+                st.progress(min(truck['weight']/veh['maxWeight'], 1.0))
+                st.dataframe(pd.DataFrame([it for s in truck['stacks'] for it in s['items']]).groupby('name').size().reset_index(name='Sztuk'), hide_index=True)
+            st.divider()
     else:
-        st.info("System operacyjny gotowy. Dodaj sprzęt w panelu bocznym, aby wygenerować plan załadunku.")
+        st.info("System gotowy. Dodaj sprzęt w panelu bocznym.")
