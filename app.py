@@ -4,255 +4,301 @@ import plotly.graph_objects as go
 import math
 import pandas as pd
 import random
+import base64
+from PIL import Image
+import io
 
-# --- 1. KONFIGURACJA I PREMIUM UI ---
-st.set_page_config(page_title="SQM Logistics Planner PRO", layout="wide", initial_sidebar_state="expanded")
+# =========================================================
+# KONFIGURACJA I SEKRETY (ZGODNIE Z VORTEZA)
+# =========================================================
+try:
+    USER_DB = st.secrets["credentials"]["usernames"]
+except Exception:
+    USER_DB = {"admin": "admin123"} # Fallback do testów
 
-def apply_custom_style():
-    st.markdown("""
-        <style>
-        [data-testid="stMetricValue"] { font-size: 1.8rem; color: #007bff; }
-        .stPlotlyChart { border-radius: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .vehicle-card { 
-            padding: 20px; border-radius: 15px; background: white; 
-            border-left: 5px solid #007bff; margin-bottom: 20px; 
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-apply_custom_style()
-
-# --- 2. LOGIKA BIZNESOWA I DANE ---
+# Parametry pojazdów
 VEHICLES = {
-    "BUS (3.5t)": {"maxWeight": 1100, "L": 450, "W": 170, "H": 210, "color": "#A0A0A0"},
-    "Solo 6m": {"maxWeight": 3500, "L": 600, "W": 245, "H": 250, "color": "#505050"},
-    "Solo 7m": {"maxWeight": 7000, "L": 720, "W": 245, "H": 270, "color": "#303030"},
-    "TIR FTL": {"maxWeight": 24000, "L": 1360, "W": 248, "H": 270, "color": "#101010"}
+    "BUS (3.5t)": {"maxWeight": 1100, "L": 450, "W": 170, "H": 210},
+    "Solo 6m": {"maxWeight": 3500, "L": 600, "W": 245, "H": 250},
+    "Solo 7m": {"maxWeight": 7000, "L": 720, "W": 245, "H": 270},
+    "TIR FTL": {"maxWeight": 24000, "L": 1360, "W": 248, "H": 270}
 }
+
+# =========================================================
+# FUNKCJE POMOCNICZE
+# =========================================================
+def get_base64_of_bin_file(bin_file):
+    try:
+        with open(bin_file, 'rb') as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except:
+        return ""
 
 def load_products():
     try:
         with open('products.json', 'r', encoding='utf-8') as f:
             data = json.load(f)
             return sorted(data, key=lambda x: x.get('name', ''))
-    except Exception as e:
-        st.error(f"Błąd bazy danych: {e}")
+    except:
         return []
 
-# --- 3. SILNIK OPTYMALIZACJI (Packing Engine) ---
+# =========================================================
+# SYSTEM LOGOWANIA VORTEZA
+# =========================================================
+def check_password():
+    if "authenticated" not in st.session_state:
+        st.session_state["authenticated"] = False
+
+    if not st.session_state["authenticated"]:
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("<br><br><br>", unsafe_allow_html=True)
+            with st.form("Login"):
+                st.markdown("<h3 style='text-align: center;'>VORTEZA | SECURE ACCESS</h3>", unsafe_allow_html=True)
+                user = st.text_input("Użytkownik", placeholder="User ID")
+                password = st.text_input("Hasło", type="password", placeholder="Access Key")
+                submit = st.form_submit_button("AUTORYZUJ")
+                if submit:
+                    if user in USER_DB and USER_DB[user] == password:
+                        st.session_state["authenticated"] = True
+                        st.session_state["username"] = user
+                        st.rerun()
+                    else:
+                        st.error("Błąd autoryzacji.")
+        return False
+    return True
+
+# =========================================================
+# STYLIZACJA VORTEZA SYSTEMS
+# =========================================================
+def apply_vorteza_theme():
+    bin_str = get_base64_of_bin_file('bg_vorteza.png')
+    bg_css = f'background-image: url("data:image/png;base64,{bin_str}");' if bin_str else "background-color: #0E0E0E;"
+    
+    st.markdown(f"""
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap');
+            :root {{
+                --v-copper: #B58863;
+                --v-dark: #0E0E0E;
+                --v-panel: rgba(20, 20, 20, 0.95);
+                --v-text: #E0E0E0;
+            }}
+            .stApp {{
+                {bg_css}
+                background-size: cover;
+                background-attachment: fixed;
+                color: var(--v-text);
+                font-family: 'Montserrat', sans-serif;
+            }}
+            h1, h2, h3, .stSubheader, p {{ color: var(--v-text) !important; }}
+            h1, h2, h3 {{ color: var(--v-copper) !important; text-transform: uppercase; letter-spacing: 2px; }}
+            
+            .vorteza-card {{
+                background-color: var(--v-panel);
+                padding: 25px;
+                border-radius: 5px;
+                border-left: 5px solid var(--v-copper);
+                box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+                backdrop-filter: blur(15px);
+                margin-bottom: 20px;
+            }}
+            [data-testid="stMetricValue"] {{
+                color: var(--v-copper) !important;
+                font-size: 1.8rem !important;
+                font-weight: 700 !important;
+            }}
+            label[data-testid="stWidgetLabel"] {{
+                color: var(--v-copper) !important;
+                text-transform: uppercase;
+                font-size: 0.8rem !important;
+                font-weight: 700 !important;
+            }}
+            .stButton > button {{
+                background-color: rgba(0, 0, 0, 0.7);
+                color: var(--v-copper);
+                border: 1px solid var(--v-copper);
+                font-weight: 700;
+                text-transform: uppercase;
+                transition: 0.3s;
+            }}
+            .stButton > button:hover {{
+                background-color: var(--v-copper);
+                color: black;
+            }}
+            /* Stylizacja tabeli zawartości */
+            .content-table {{ width: 100%; border-collapse: collapse; }}
+            .content-table th {{ color: var(--v-copper); text-align: left; border-bottom: 1px solid #444; padding: 10px; text-transform: uppercase; font-size: 0.7rem; }}
+            .content-table td {{ padding: 10px; border-bottom: 1px solid #222; font-size: 0.85rem; }}
+        </style>
+    """, unsafe_allow_html=True)
+
+# =========================================================
+# SILNIK OPTYMALIZACJI (PRZENIESIONY Z TWOJEGO KODU)
+# =========================================================
 def optimize_packing(items, vehicle):
-    """
-    Ulepszony algorytm First-Fit Decreasing z rotacją i sprawdzaniem stosowalności.
-    """
-    # Sortowanie: najpierw te, których nie można piętrować, potem wg pola podstawy
     items = sorted(items, key=lambda x: (not x.get('canStack', True), x['length'] * x['width']), reverse=True)
-    
-    placed_stacks = []
-    not_placed = []
-    total_weight = 0
-    
-    # Grid-based packing (prosty, ale czytelny dla logistyka)
-    curr_x, curr_y, row_max_width = 0, 0, 0
+    placed_stacks, not_placed = [], []
+    total_weight, curr_x, curr_y, row_max_width = 0, 0, 0, 0
     
     for it in items:
         if total_weight + it['weight'] > vehicle['maxWeight']:
             not_placed.append(it)
             continue
-            
         fit_found = False
-        
-        # 1. Próba piętrowania na istniejących stosach
         if it.get('canStack', True):
             for s in placed_stacks:
-                # Sprawdź wymiary (z rotacją 90st)
-                can_fit_dims = (it['width'] <= s['w'] and it['length'] <= s['l']) or \
-                               (it['length'] <= s['w'] and it['width'] <= s['l'])
-                if can_fit_dims and (s['curH'] + it['height'] <= vehicle['H']):
-                    it_copy = it.copy()
-                    it_copy['z'] = s['curH']
-                    s['items'].append(it_copy)
-                    s['curH'] += it['height']
-                    total_weight += it['weight']
-                    fit_found = True
-                    break
-        
+                can_fit = (it['width'] <= s['w'] and it['length'] <= s['l']) or (it['length'] <= s['w'] and it['width'] <= s['l'])
+                if can_fit and (s['curH'] + it['height'] <= vehicle['H']):
+                    it_copy = it.copy(); it_copy['z'] = s['curH']
+                    s['items'].append(it_copy); s['curH'] += it['height']
+                    total_weight += it['weight']; fit_found = True; break
         if fit_found: continue
-
-        # 2. Próba postawienia na podłodze (z rotacją)
-        dims_to_try = [(it['width'], it['length']), (it['length'], it['width'])]
-        for w, l in dims_to_try:
+        dims = [(it['width'], it['length']), (it['length'], it['width'])]
+        for w, l in dims:
             if curr_y + l <= vehicle['W'] and curr_x + w <= vehicle['L']:
-                # Miejsce w obecnym rzędzie
-                it_copy = it.copy()
-                it_copy['z'] = 0
+                it_copy = it.copy(); it_copy['z'] = 0
                 placed_stacks.append({'x': curr_x, 'y': curr_y, 'w': w, 'l': l, 'curH': it['height'], 'items': [it_copy]})
-                curr_y += l
-                row_max_width = max(row_max_width, w)
-                total_weight += it['weight']
-                fit_found = True
-                break
+                curr_y += l; row_max_width = max(row_max_width, w); total_weight += it['weight']; fit_found = True; break
             elif curr_x + row_max_width + w <= vehicle['L'] and l <= vehicle['W']:
-                # Nowy rząd
-                curr_x += row_max_width
-                curr_y = 0
-                row_max_width = w
-                it_copy = it.copy()
-                it_copy['z'] = 0
+                curr_x += row_max_width; curr_y = 0; row_max_width = w
+                it_copy = it.copy(); it_copy['z'] = 0
                 placed_stacks.append({'x': curr_x, 'y': curr_y, 'w': w, 'l': l, 'curH': it['height'], 'items': [it_copy]})
-                curr_y += l
-                total_weight += it['weight']
-                fit_found = True
-                break
-        
-        if not fit_found:
-            not_placed.append(it)
-
-    # Oblicz LDM (Longest X / 100)
+                curr_y += l; total_weight += it['weight']; fit_found = True; break
+        if not fit_found: not_placed.append(it)
     ldm = max([s['x'] + s['w'] for s in placed_stacks]) / 100 if placed_stacks else 0
     return placed_stacks, total_weight, not_placed, ldm
 
-# --- 4. WIZUALIZACJA 3D PRO ---
 def create_3d_view(stacks, vehicle):
     fig = go.Figure()
-    
-    # Rysowanie obrysu paki
+    # Obrys paki (Miedziany zamiast Cyan)
     fig.add_trace(go.Mesh3d(
         x=[0, vehicle['L'], vehicle['L'], 0, 0, vehicle['L'], vehicle['L'], 0],
         y=[0, 0, vehicle['W'], vehicle['W'], 0, 0, vehicle['W'], vehicle['W']],
         z=[0, 0, 0, 0, vehicle['H'], vehicle['H'], vehicle['H'], vehicle['H']],
-        opacity=0.05, color='cyan', hoverinfo='skip'
+        opacity=0.03, color='#B58863', hoverinfo='skip'
     ))
-
-    colors = ["#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A", "#19D3F3", "#FF6692", "#B6E880"]
-
+    # Paleta VORTEZA (Miedź, Złoto, Czerń, Szarość)
+    v_colors = ["#B58863", "#8E6A4D", "#5E4633", "#D4AF37", "#4A4A4A", "#2F2F2F"]
     for i, s in enumerate(stacks):
-        color = colors[i % len(colors)]
+        color = v_colors[i % len(v_colors)]
         for it in s['items']:
             x, y, z = s['x'], s['y'], it['z']
             dx, dy, dz = (it['width'], it['length'], it['height']) if it['width'] == s['w'] else (it['length'], it['width'], it['height'])
-            
-            # Box
             fig.add_trace(go.Mesh3d(
-                x=[x, x+dx, x+dx, x, x, x+dx, x+dx, x],
-                y=[y, y, y+dy, y+dy, y, y, y+dy, y+dy],
+                x=[x, x+dx, x+dx, x, x, x+dx, x+dx, x], y=[y, y, y+dy, y+dy, y, y, y+dy, y+dy],
                 z=[z, z, z, z, z+dz, z+dz, z+dz, z+dz],
                 i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6],
-                color=color, opacity=0.8, name=it['name'],
-                hovertemplate=f"<b>{it['name']}</b><br>Waga: {it['weight']}kg<br>Z: {z}cm<extra></extra>"
+                color=color, opacity=0.9, name=it['name']
             ))
-            # Krawędzie dla czytelności
-            fig.add_trace(go.Scatter3d(
-                x=[x, x+dx, x+dx, x, x, x, x+dx, x+dx, x, x, x+dx, x+dx, x+dx, x+dx, x, x],
-                y=[y, y, y+dy, y+dy, y, y, y, y+dy, y+dy, y+dy, y+dy, y, y, y+dy, y+dy, y],
-                z=[z, z, z, z, z, z+dz, z+dz, z, z, z+dz, z+dz, z+dz, z, z, z+dz, z+dz],
-                mode='lines', line=dict(color='black', width=2), hoverinfo='skip'
-            ))
-
     fig.update_layout(
-        scene=dict(
-            aspectmode='data',
-            xaxis_title="Długość (cm)", yaxis_title="Szerokość (cm)", zaxis_title="Wysokość (cm)",
-            camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))
-        ),
-        margin=dict(l=0, r=0, b=0, t=0),
-        showlegend=False
+        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+        scene=dict(bgcolor='rgba(0,0,0,0)', aspectmode='data',
+                   xaxis=dict(gridcolor='#333', title_font=dict(color='#B58863')),
+                   yaxis=dict(gridcolor='#333', title_font=dict(color='#B58863')),
+                   zaxis=dict(gridcolor='#333', title_font=dict(color='#B58863'))),
+        margin=dict(l=0, r=0, b=0, t=0), showlegend=False
     )
     return fig
 
-# --- 5. GŁÓWNY INTERFEJS ---
-def main():
-    st.title("📦 SQM Logistics Planner Pro")
-    
-    if 'cargo_list' not in st.session_state:
-        st.session_state.cargo_list = []
+# =========================================================
+# GŁÓWNA APLIKACJA
+# =========================================================
+st.set_page_config(page_title="VORTEZA FLOW | LOGISTICS PLANNER", layout="wide")
+apply_vorteza_theme()
+
+if check_password():
+    # Nagłówek VORTEZA
+    col_logo, col_title, col_logout = st.columns([1, 4, 1])
+    with col_logo:
+        try:
+            st.image('logo_vorteza.png', use_container_width=True)
+        except:
+            st.markdown("<h2 style='color:#B58863;'>VORTEZA</h2>", unsafe_allow_html=True)
+    with col_title:
+        st.markdown("<h1 style='margin-bottom:0;'>VORTEZA FLOW</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='letter-spacing:3px; color:#666;'>SYSTEMS | 3D LOGISTICS INTERFACE</p>", unsafe_allow_html=True)
+    with col_logout:
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("WYLOGUJ"):
+            del st.session_state["authenticated"]; st.rerun()
 
     all_products = load_products()
+    if 'cargo_list' not in st.session_state: st.session_state.cargo_list = []
 
+    # --- SIDEBAR (ZGODNIE ZE STYLEM) ---
     with st.sidebar:
-        st.header("⚙️ Konfiguracja")
-        v_name = st.selectbox("Wybierz pojazd:", list(VEHICLES.keys()))
+        st.markdown("<h3 style='color:#B58863;'>OPERACJE</h3>", unsafe_allow_html=True)
+        v_name = st.selectbox("JEDNOSTKA FLOTY", list(VEHICLES.keys()))
         v_data = VEHICLES[v_name]
         
-        st.info(f"Parametry: {v_data['L']}x{v_data['W']}x{v_data['H']} cm | Max: {v_data['maxWeight']} kg")
+        st.markdown('<div class="route-preview">', unsafe_allow_html=True)
+        st.markdown(f"Pojemność: {v_data['L']}x{v_data['W']} cm<br>Dopuszczalna masa: {v_data['maxWeight']} kg", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
         st.divider()
-        st.subheader("🚀 Dodaj ładunek")
-        selected_p = st.selectbox("Produkt z bazy:", [p['name'] for p in all_products], index=None)
-        qty = st.number_input("Ilość (sztuk):", min_value=1, value=1)
+        selected_p = st.selectbox("BAZA PRODUKTÓW", [p['name'] for p in all_products], index=None)
+        qty = st.number_input("ILOŚĆ (JEDNOSTKI)", min_value=1, value=1)
         
-        if st.button("Dodaj do planu", use_container_width=True, type="primary"):
+        if st.button("DODAJ DO MANIFESTU"):
             if selected_p:
                 p_info = next(p for p in all_products if p['name'] == selected_p)
-                for _ in range(qty):
-                    st.session_state.cargo_list.append(p_info.copy())
-                st.toast(f"Dodano {qty}x {selected_p}")
-            else:
-                st.warning("Wybierz produkt!")
+                for _ in range(qty): st.session_state.cargo_list.append(p_info.copy())
+                st.toast(f"Zaktualizowano manifest: {selected_p}")
+            else: st.warning("Wybierz jednostkę ładunkową.")
 
-        if st.button("Wyczyść wszystko", use_container_width=True):
-            st.session_state.cargo_list = []
-            st.rerun()
+        if st.button("RERESETUJ SYSTEM", type="secondary"):
+            st.session_state.cargo_list = []; st.rerun()
 
     # --- WIDOK GŁÓWNY ---
-    if not st.session_state.cargo_list:
-        st.placeholder().visual_content = st.info("Twoja lista załadunkowa jest pusta. Dodaj produkty z panelu bocznego.")
-        return
+    if st.session_state.cargo_list:
+        # Statystyki w kartach VORTEZA
+        m1, m2, m3, m4 = st.columns(4)
+        total_qty = len(st.session_state.cargo_list)
+        total_w = sum(i['weight'] for i in st.session_state.cargo_list)
+        total_v = sum((i['width']*i['length']*i['height'])/1000000 for i in st.session_state.cargo_list)
+        
+        with m1: st.metric("TOTAL UNITS", total_qty)
+        with m2: st.metric("TOTAL WEIGHT", f"{total_w} KG")
+        with m3: st.metric("VOLUME", f"{total_v:.2f} M³")
+        with m4: st.metric("ESTIMATED LDM", f"{(total_w/v_data['maxWeight'])*(v_data['L']/100):.2f}")
 
-    # Statystyki ogólne
-    c1, c2, c3, c4 = st.columns(4)
-    total_qty = len(st.session_state.cargo_list)
-    total_w = sum(i['weight'] for i in st.session_state.cargo_list)
-    total_v = sum((i['width']*i['length']*i['height'])/1000000 for i in st.session_state.cargo_list)
-    
-    c1.metric("Sztuk łącznie", total_qty)
-    c2.metric("Waga całkowita", f"{total_w} kg")
-    c3.metric("Objętość", f"{total_v:.2f} m³")
-    c4.metric("LDM (Suma)", f"{(total_w/v_data['maxWeight'])* (v_data['L']/100):.2f}")
+        # Proces pakowania
+        remaining = [dict(i) for i in st.session_state.cargo_list]
+        fleet_results = []
+        while remaining:
+            stacks, weight, not_p, ldm = optimize_packing(remaining, v_data)
+            if not stacks and remaining:
+                st.error("KRYTYCZNY BŁĄD: Jednostka zbyt duża dla wybranego pojazdu.")
+                break
+            fleet_results.append({"stacks": stacks, "weight": weight, "ldm": ldm})
+            remaining = not_p
 
-    # Proces pakowania
-    remaining = [dict(i) for i in st.session_state.cargo_list]
-    fleet_results = []
-    
-    while remaining:
-        stacks, weight, not_p, ldm = optimize_packing(remaining, v_data)
-        if not stacks and remaining: 
-            st.error("Niektóre przedmioty są za duże dla tego pojazdu!")
-            break
-        fleet_results.append({"stacks": stacks, "weight": weight, "ldm": ldm})
-        remaining = not_p
-
-    # Wyniki
-    st.header(f"🚛 Plan Transportu: {len(fleet_results)} pojazd(y)")
-    
-    for idx, truck in enumerate(fleet_results):
-        with st.container():
-            st.markdown(f"""<div class="vehicle-card">
-                <h3>Pojazd #{idx+1} ({v_name})</h3>
-                Wypełnienie wagowe: <b>{ (truck['weight']/v_data['maxWeight'])*100:.1f}%</b> | 
-                Zajęte LDM: <b>{truck['ldm']:.2f}</b>
-            </div>""", unsafe_allow_html=True)
+        st.subheader(f"ASYGNACJA FLOTY: {len(fleet_results)} JEDNOSTKI")
+        
+        for idx, truck in enumerate(fleet_results):
+            st.markdown(f'<div class="vorteza-card">', unsafe_allow_html=True)
+            st.markdown(f"### POJAZD #{idx+1} | {v_name}", unsafe_allow_html=True)
             
-            col_chart, col_data = st.columns([2, 1])
-            
-            with col_chart:
+            c_plot, c_data = st.columns([1.5, 1])
+            with c_plot:
                 st.plotly_chart(create_3d_view(truck['stacks'], v_data), use_container_width=True)
-            
-            with col_data:
-                st.subheader("Zawartość")
-                # Agregacja do tabeli
-                truck_items = []
-                for s in truck['stacks']:
-                    for it in s['items']:
-                        truck_items.append(it['name'])
+            with c_data:
+                st.markdown("<p style='color:#B58863; font-weight:bold;'>MANIFEST ZAŁADUNKOWY</p>", unsafe_allow_html=True)
+                items = [it['name'] for s in truck['stacks'] for it in s['items']]
+                summary = pd.Series(items).value_counts().reset_index()
                 
-                summary_df = pd.Series(truck_items).value_counts().reset_index()
-                summary_df.columns = ['Produkt', 'Sztuk']
-                st.table(summary_df)
-
-    # Export
-    if st.button("Generuj Raport PDF (Symulacja)"):
-        st.snow()
-        st.success("Raport gotowy do pobrania (funkcja demo)")
-
-if __name__ == "__main__":
-    main()
+                # Budowanie tabeli w stylu VORTEZA
+                html_table = '<table class="content-table"><tr><th>Produkt</th><th>Sztuk</th></tr>'
+                for _, row in summary.iterrows():
+                    html_table += f'<tr><td>{row["index"]}</td><td>{row["count"]}</td></tr>'
+                html_table += '</table>'
+                st.markdown(html_table, unsafe_allow_html=True)
+                
+                st.markdown(f"<br><p style='font-size:0.8rem;'>WYKORZYSTANIE MASY: <b>{(truck['weight']/v_data['maxWeight'])*100:.1f}%</b></p>", unsafe_allow_html=True)
+                st.markdown(f"<p style='font-size:0.8rem;'>WYKORZYSTANIE LDM: <b>{truck['ldm']:.2f}</b></p>", unsafe_allow_html=True)
+            
+            st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="vorteza-card" style="text-align:center;">SYSTEM GOTOWY. OCZEKIWANIE NA DANE MANIFESTU...</div>', unsafe_allow_html=True)
