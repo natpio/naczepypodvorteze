@@ -23,16 +23,25 @@ def render_3d_supreme(veh, stacks):
     fig = go.Figure()
     L, W, H = veh['L'], veh['W'], veh['H']
     fig.add_trace(go.Mesh3d(x=[0,L,L,0], y=[0,0,W,W], z=[-15,-15,-15,-15], color='#111', opacity=1, hoverinfo='skip'))
-    # Kabina i Podwozie CAD
+    
+    # OSie i KOŁA (Przywrócenie wyglądu z app3.py)
     for a in range(veh['ax']):
         px = (L-450) + (a*145) if L > 800 else (L-180) + (a*145)
         if px < L:
             for side in [-40, W+22]:
                 fig.add_trace(go.Mesh3d(x=[px-55, px+55, px+55, px-55], y=[side, side, side+18, side+18], z=[-80, -80, -15, -15], color='#000', opacity=1))
                 fig.add_trace(go.Mesh3d(x=[px-22, px+22, px+22, px-22], y=[side-2, side-2, side, side], z=[-55, -55, -35, -35], color='#B58863', opacity=0.9))
+    
+    # Kabina Commander
     fig.add_trace(go.Mesh3d(x=[-veh['cab'], 0, 0, -veh['cab'], -veh['cab'], 0, 0, -veh['cab']], y=[-45,-45,W+45,W+45], z=[0,0,0,0,H*1.05,H*1.05,H*1.05,H*1.05], i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6], color='#020202', opacity=1))
+
+    # Klatka miedziana (Skeleton)
+    skel = [([0,L],[0,0],[0,0]), ([0,L],[W,W],[0,0]), ([0,0],[0,W],[0,0]), ([L,L],[0,W],[0,0]), ([0,0],[0,0],[0,H]), ([0,0],[W,W],[0,H]), ([0,L],[0,0],[H,H]), ([0,L],[W,W],[H,H]), ([L,L],[0,0],[0,H]), ([L,L],[W,W],[0,H])]
+    for lx, ly, lz in skel: fig.add_trace(go.Scatter3d(x=lx, y=ly, z=lz, mode='lines', line=dict(color='#B58863', width=12), hoverinfo='skip'))
+
     for s in stacks:
         for u in s['items']:
             for p in build_box_explicit(s['x'], s['y'], u['z'], u['w_fit'], u['l_fit'], u['height'], get_pro_color(u['name']), u['name']): fig.add_trace(p)
+    
     fig.update_layout(scene=dict(aspectmode='data', xaxis_visible=False, yaxis_visible=False, zaxis_visible=False, camera=dict(eye=dict(x=2.5, y=2.5, z=2.0))), paper_bgcolor='rgba(0,0,0,0)', margin=dict(l=0,r=0,b=0,t=0), showlegend=False)
     return fig
