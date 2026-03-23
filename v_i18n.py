@@ -2,7 +2,7 @@
 TRANSLATIONS = {
     "PL": {
         "fleet": "KONSOLA FLOTY", "cargo": "WPISYWANIE ŁADUNKU", "planner": "PLANISTA TAKTYCZNY",
-        "inventory": "MASTER INVENTORY", "unit": "POJAZD", "offset": "OFFSET OD ŚCIANY (cm)",
+        "inventory": "MASTER INVENTORY", "logs": "LOGI SYSTEMOWE", "unit": "POJAZD", "offset": "OFFSET OD ŚCIANY (cm)",
         "truss_calc": "V-TRUSS CALCULATOR", "add_truss": "PRZELICZ I DODAJ WÓZKI", "sku_sel": "WYBÓR SKU",
         "qty": "SZTUKI", "append": "DODAJ DO MANIFESTU", "purge": "WYCZYŚĆ WSZYSTKO", "cases": "OPAKOWANIA",
         "pcs": "SZTUKI ŁĄCZNIE", "weight": "MASA BRUTTO", "util": "WYKORZYSTANIE", "kpi": "PARAMETRY OPERACYJNE",
@@ -10,12 +10,15 @@ TRANSLATIONS = {
         "axle_r": "OSIE TYŁ (REAR)", "rotation": "ROTACJA", "terminate": "ZAKOŃCZ SESJĘ",
         "truss_2m": "KRATY 2M (SZT)", "truss_3m": "KRATY 3M (SZT)", "manifest": "LISTA ZAŁADUNKOWA",
         "status_auth": "DOSTĘP ZAUTORYZOWANY", "standard": "STANDARD", "pcs_unit": "SZT/JEDN",
-        "sync": "SYNCHRONIZUJ BAZĘ", "add_new": "DODAJ NOWY PRODUKT DO BAZY",
-        "length": "DŁUGOŚĆ", "width": "SZEROKOŚĆ", "height": "WYSOKOŚĆ"
+        "sync": "SYNCHRONIZUJ BAZĘ", "register_new": "➕ REJESTRACJA NOWEGO PRODUKTU",
+        "length": "L (cm)", "width": "W (cm)", "height": "H (cm)", "mass": "MASA (kg)",
+        "stack_perm": "POZWOLENIE NA PIĘTROWANIE", "rot_auth": "AUTORYZACJA OBROTU",
+        "commit": "ZAPISZ DO BAZY MASTER", "push_archive": "SYNCHRONIZUJ ARCHIWUM",
+        "oversize": "CRITICAL: TOWAR ZA DUŻY NA POJAZD"
     },
     "ENG": {
         "fleet": "FLEET CONSOLE", "cargo": "CARGO ENTRY", "planner": "TACTICAL PLANNER",
-        "inventory": "MASTER INVENTORY", "unit": "TRANSPORT UNIT", "offset": "WALL OFFSET (cm)",
+        "inventory": "MASTER INVENTORY", "logs": "SYSTEM LOGS", "unit": "TRANSPORT UNIT", "offset": "WALL OFFSET (cm)",
         "truss_calc": "TRUSS CALCULATOR", "add_truss": "CALC & ADD CARTS", "sku_sel": "SKU SELECTOR",
         "qty": "QUANTITY", "append": "APPEND TO MANIFEST", "purge": "PURGE ALL DATA", "cases": "CASES",
         "pcs": "TOTAL PIECES", "weight": "GROSS WEIGHT", "util": "UTILIZATION", "kpi": "OPERATIONAL KPI",
@@ -23,8 +26,11 @@ TRANSLATIONS = {
         "axle_r": "REAR AXLES", "rotation": "ROTATION", "terminate": "TERMINATE SESSION",
         "truss_2m": "TRUSS 2M (PCS)", "truss_3m": "TRUSS 3M (PCS)", "manifest": "PACKING LIST",
         "status_auth": "ACCESS AUTHORIZED", "standard": "STANDARD", "pcs_unit": "PCS/UNIT",
-        "sync": "SYNC DATABASE", "add_new": "ADD NEW PRODUCT TO DATABASE",
-        "length": "LENGTH", "width": "WIDTH", "height": "HEIGHT"
+        "sync": "SYNC DATABASE", "register_new": "➕ REGISTER NEW ASSET",
+        "length": "L (cm)", "width": "W (cm)", "height": "H (cm)", "mass": "MASS (kg)",
+        "stack_perm": "STACKING PERMISSION", "rot_auth": "ROTATION AUTHORIZED",
+        "commit": "COMMIT TO MASTER DB", "push_archive": "PUSH CHANGES TO ARCHIVE",
+        "oversize": "CRITICAL: UNIT OVERSIZE DETECTED"
     },
     "DE": {
         "fleet": "FLOTTENKONSOLE", "cargo": "LADUNGSEINGABE", "planner": "TAKTIK-PLANER",
@@ -36,8 +42,11 @@ TRANSLATIONS = {
         "axle_r": "HINTERACHSEN", "rotation": "ROTATION", "terminate": "BEENDEN",
         "truss_2m": "TRAVERSEN 2M", "truss_3m": "TRAVERSEN 3M", "manifest": "LADUNGSMANIFEST",
         "status_auth": "ZUGRIFF AUTORISIERT", "standard": "STANDARD", "pcs_unit": "STK/UNIT",
-        "sync": "SYNC DATENBANK", "add_new": "NEUES PRODUKT HINZUFÜGEN",
-        "length": "LÄNGE", "width": "BREITE", "height": "HÖHE"
+        "sync": "SYNC DATENBANK", "register_new": "➕ NEUES PRODUKT",
+        "length": "L (cm)", "width": "W (cm)", "height": "H (cm)", "mass": "GEWICHT (kg)",
+        "stack_perm": "STAPELBAR", "rot_auth": "DREHUNG ERLAUBT",
+        "commit": "IN DB SPEICHERN", "push_archive": "ARCHIV SYNCHRONISIEREN",
+        "oversize": "FEHLER: EINHEIT ZU GROSS"
     },
     "ES": {
         "fleet": "CONSOLA DE FLOTA", "cargo": "ENTRADA DE CARGA", "planner": "PLANIFICADOR",
@@ -47,9 +56,12 @@ TRANSLATIONS = {
         "pcs": "PIEZAS TOTALES", "weight": "PESO BRUTO", "util": "UTILIZACIÓN", "kpi": "KPI OPERATIVO",
         "ldm": "LDM OCUPADO", "cog": "CENTRO DE GRAVEDAD (CoG)", "axle_f": "EJES DELANTEROS", 
         "axle_r": "EJES TRASEROS", "rotation": "ROTACIÓN", "terminate": "TERMINAR",
-        "truss_2m": "TRUSS 2M", "truss_3m": "TRUSS 3M", "manifest": "MANIFIESTO DE CARGA",
+        "truss_2m": "TRUSS 2M", "truss_3m": "TRUSS 3M", "manifest": "MANIFIESTO",
         "status_auth": "ACCESO AUTORIZADO", "standard": "ESTÁNDAR", "pcs_unit": "PZAS/UNID",
-        "sync": "SINCRONIZAR", "add_new": "AÑADIR NUEVO PRODUCTO",
-        "length": "LONGITUD", "width": "ANCHO", "height": "ALTURA"
+        "sync": "SINCRONIZAR", "register_new": "➕ NUEVO PRODUCTO",
+        "length": "L (cm)", "width": "W (cm)", "height": "H (cm)", "mass": "PESO (kg)",
+        "stack_perm": "APILABLE", "rot_auth": "ROTACIÓN PERMITIDA",
+        "commit": "GUARDAR EN DB", "push_archive": "SINCRONIZAR ARCHIVO",
+        "oversize": "ERROR: UNIDAD SOBREDIMENSIONADA"
     }
 }
