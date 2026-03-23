@@ -2,7 +2,7 @@
 TRANSLATIONS = {
     "PL": {
         "fleet": "KONSOLA FLOTY", "cargo": "WPISYWANIE ŁADUNKU", "planner": "PLANISTA TAKTYCZNY",
-        "inventory": "BAZA PRODUKTÓW", "unit": "POJAZD", "offset": "OFFSET OD ŚCIANY (cm)",
+        "inventory": "MASTER INVENTORY", "unit": "POJAZD", "offset": "OFFSET OD ŚCIANY (cm)",
         "truss_calc": "KALKULATOR KRATOWNIC", "add_truss": "PRZELICZ I DODAJ WÓZKI", "sku_sel": "WYBÓR SKU",
         "qty": "SZTUKI", "append": "DODAJ DO MANIFESTU", "purge": "WYCZYŚĆ WSZYSTKO", "cases": "OPAKOWANIA",
         "pcs": "SZTUKI ŁĄCZNIE", "weight": "MASA BRUTTO", "util": "WYKORZYSTANIE", "kpi": "PARAMETRY OPERACYJNE",
