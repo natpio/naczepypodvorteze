@@ -23,7 +23,6 @@ def check_password():
     if not st.session_state.authenticated:
         st.title("🔐 Logistics Terminal")
         try:
-            # Hasło musi być zdefiniowane w .streamlit/secrets.toml lub w panelu Cloud
             master_password = str(st.secrets["password"])
         except:
             st.error("Brak hasła w systemie Secrets (klucz 'password').")
@@ -51,14 +50,13 @@ COLOR_PALETTE = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b
 def load_products():
     try:
         with open('products.json', 'r', encoding='utf-8') as f:
-            return sorted(json.load(f), key=lambda x: x.get('name', ''))
+            data = json.load(f)
+            # Zapewnienie, że każdy produkt ma itemsPerCase
+            for p in data:
+                if 'itemsPerCase' not in p: p['itemsPerCase'] = 1
+            return sorted(data, key=lambda x: x.get('name', ''))
     except:
-        # Fallback danych demonstracyjnych
-        return [
-            {"name": "Paleta EPAL 1", "width": 80, "length": 120, "height": 140, "weight": 450, "canStack": True, "itemsPerCase": 1},
-            {"name": "Skrzynia Drewniana", "width": 100, "length": 100, "height": 100, "weight": 200, "canStack": True, "itemsPerCase": 1},
-            {"name": "Karton Zbiorczy", "width": 60, "length": 40, "height": 40, "weight": 20, "canStack": True, "itemsPerCase": 10}
-        ]
+        return [{"name": "Błąd ładowania products.json", "width": 80, "length": 120, "height": 140, "weight": 450, "canStack": True, "itemsPerCase": 1}]
 
 # --- 4. LOGIKA PAKOWANIA ---
 def pack_one_vehicle(remaining_items, vehicle):
@@ -79,7 +77,6 @@ def pack_one_vehicle(remaining_items, vehicle):
             continue
             
         added = False
-
         if item.get('canStack', True):
             for s in placed_stacks:
                 match = (item['width'] == s['width'] and item['length'] == s['length']) or \
@@ -168,7 +165,6 @@ def draw_3d(placed_stacks, vehicle, color_map):
         for it in s['items']:
             x0, y0, z0 = s['x'], s['y'], it['z_pos']
             dx, dy, dz = it['width'], it['length'], it['height']
-            
             fig.add_trace(go.Mesh3d(
                 x=[x0, x0+dx, x0+dx, x0, x0, x0+dx, x0+dx, x0],
                 y=[y0, y0, y0+dy, y0+dy, y0, y0, y0+dy, y0+dy],
@@ -213,7 +209,7 @@ if check_password():
             for i in range(num_units):
                 c = p_ref.copy()
                 remainder = qty % ipc
-                # Zapewnienie, że pole actual_items zawsze istnieje
+                # Kluczowy fix: wymuszenie obecności pola actual_items
                 if num_units == 1:
                     c['actual_items'] = qty
                 elif i == num_units - 1 and remainder != 0:
@@ -229,16 +225,13 @@ if check_password():
 
     if st.session_state.cargo:
         st.header("📋 Lista Wysyłkowa")
-        
         df_cargo = pd.DataFrame(st.session_state.cargo)
         
-        # ZABEZPIECZENIE: Jeśli z jakiegoś powodu brakuje kolumny, tworzymy ją z domyślną wartością 1
+        # ZABEZPIECZENIE: Jeśli z jakiegoś powodu brakuje kolumny w df, utwórz ją
         if 'actual_items' not in df_cargo.columns:
             df_cargo['actual_items'] = 1
             
         sum_df = df_cargo.groupby('name').agg({'actual_items': 'sum'}).reset_index()
-        
-        st.info("Zmień wartość w kolumnie **actual_items** i naciśnij Enter. Wpisanie **0** usunie produkt.")
         
         edited_df = st.data_editor(
             sum_df, 
@@ -275,34 +268,25 @@ if check_password():
 
         rem_cargo = [dict(i) for i in st.session_state.cargo]
         fleet_results = []
-        
         while rem_cargo:
             stacks, weight, not_p, m_l = pack_one_vehicle(rem_cargo, veh)
-            if not stacks:
-                break
+            if not stacks: break
             fleet_results.append({"stacks": stacks, "weight": weight, "ldm": m_l/100})
             rem_cargo = not_p
 
         st.divider()
         st.header(f"📊 Plan Załadunku: {len(fleet_results)} auto/a")
 
-        if rem_cargo:
-            st.warning(f"⚠️ Nie udało się zapakować {len(rem_cargo)} jednostek! Zmień typ pojazdu.")
-
         for idx, truck in enumerate(fleet_results):
             with st.container():
                 st.subheader(f"🚛 Pojazd #{idx+1} ({v_name})")
-                
                 all_items_in_truck = [it for s in truck['stacks'] for it in s['items']]
-                vol_used = sum(it['width']*it['length']*it['height'] for it in all_items_in_truck) / 1000000
                 floor_area_used = sum(s['width']*s['length'] for s in truck['stacks'])
-                floor_total = veh['L']*veh['W']
                 
-                m1, m2, m3, m4 = st.columns(4)
+                m1, m2, m3 = st.columns(3)
                 m1.metric("LDM", f"{truck['ldm']:.2f} m")
-                m2.metric("Zajęcie Podłogi", f"{int(floor_area_used/floor_total*100)}%")
+                m2.metric("Zajęcie Podłogi", f"{int(floor_area_used/(veh['L']*veh['W'])*100)}%")
                 m3.metric("Waga", f"{truck['weight']} / {veh['maxWeight']} kg")
-                m4.metric("Objętość", f"{vol_used:.1f} m³")
 
                 col_viz, col_tab = st.columns([3, 2])
                 with col_viz:
@@ -311,16 +295,11 @@ if check_password():
                     st.write("**📍 Specyfikacja załadunku:**")
                     df_in = pd.DataFrame(all_items_in_truck)
                     if not df_in.empty:
-                        # Ponowne zabezpieczenie dla specyfikacji w tabeli
                         if 'actual_items' not in df_in.columns: df_in['actual_items'] = 1
-                        
-                        res = df_in.groupby('name').agg({'actual_items': 'sum', 'weight': 'sum', 'name': 'count'}).rename(
-                            columns={'actual_items':'Sztuk','weight':'Waga (kg)', 'name': 'Jednostek'}
-                        )
-                        st.dataframe(res.reset_index()[['name', 'Sztuk', 'Jednostek', 'Waga (kg)']], use_container_width=True, hide_index=True)
-                    
-                    st.write("**Wykorzystanie DMC:**")
-                    st.progress(min(truck['weight']/veh['maxWeight'], 1.0))
+                        res = df_in.groupby('name').agg({'actual_items': 'sum', 'name': 'count', 'weight': 'sum'}).rename(
+                            columns={'actual_items':'Sztuk','name':'Jednostek','weight':'Waga (kg)'}
+                        ).reset_index()
+                        st.dataframe(res, use_container_width=True, hide_index=True)
                 st.divider()
     else:
-        st.info("Brak towarów. Wybierz produkty z panelu bocznego, aby wygenerować plan.")
+        st.info("Brak towarów. Wybierz produkty z bazy w panelu bocznym.")
