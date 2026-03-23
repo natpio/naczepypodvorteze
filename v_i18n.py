@@ -3,12 +3,14 @@ TRANSLATIONS = {
     "PL": {
         "fleet": "KONSOLA FLOTY", "cargo": "WPISYWANIE ŁADUNKU", "planner": "PLANISTA TAKTYCZNY",
         "inventory": "MASTER INVENTORY", "unit": "POJAZD", "offset": "OFFSET OD ŚCIANY (cm)",
-        "truss_calc": "KALKULATOR KRATOWNIC", "add_truss": "PRZELICZ I DODAJ WÓZKI", "sku_sel": "WYBÓR SKU",
+        "truss_calc": "V-TRUSS CALCULATOR", "add_truss": "PRZELICZ I DODAJ WÓZKI", "sku_sel": "WYBÓR SKU",
         "qty": "SZTUKI", "append": "DODAJ DO MANIFESTU", "purge": "WYCZYŚĆ WSZYSTKO", "cases": "OPAKOWANIA",
         "pcs": "SZTUKI ŁĄCZNIE", "weight": "MASA BRUTTO", "util": "WYKORZYSTANIE", "kpi": "PARAMETRY OPERACYJNE",
         "ldm": "ZAJĘTE LDM", "cog": "ANALIZA ŚRODKA CIĘŻKOŚCI (CoG)", "axle_f": "OSIE PRZÓD (CAB)", 
         "axle_r": "OSIE TYŁ (REAR)", "rotation": "ROTACJA", "terminate": "ZAKOŃCZ SESJĘ",
-        "truss_2m": "KRATY 2M (SZT)", "truss_3m": "KRATY 3M (SZT)", "manifest": "LISTA ZAŁADUNKOWA"
+        "truss_2m": "KRATY 2M (SZT)", "truss_3m": "KRATY 3M (SZT)", "manifest": "LISTA ZAŁADUNKOWA",
+        "status_auth": "DOSTĘP ZAUTORYZOWANY", "standard": "STANDARD", "pcs_unit": "SZT/JEDN",
+        "sync": "SYNCHRONIZUJ BAZĘ"
     },
     "ENG": {
         "fleet": "FLEET CONSOLE", "cargo": "CARGO ENTRY", "planner": "TACTICAL PLANNER",
@@ -18,7 +20,9 @@ TRANSLATIONS = {
         "pcs": "TOTAL PIECES", "weight": "GROSS WEIGHT", "util": "UTILIZATION", "kpi": "OPERATIONAL KPI",
         "ldm": "OCCUPIED LDM", "cog": "CENTER OF GRAVITY (CoG)", "axle_f": "FRONT AXLES", 
         "axle_r": "REAR AXLES", "rotation": "ROTATION", "terminate": "TERMINATE SESSION",
-        "truss_2m": "TRUSS 2M (PCS)", "truss_3m": "TRUSS 3M (PCS)", "manifest": "PACKING LIST"
+        "truss_2m": "TRUSS 2M (PCS)", "truss_3m": "TRUSS 3M (PCS)", "manifest": "PACKING LIST",
+        "status_auth": "ACCESS AUTHORIZED", "standard": "STANDARD", "pcs_unit": "PCS/UNIT",
+        "sync": "SYNC DATABASE"
     },
     "DE": {
         "fleet": "FLOTTENKONSOLE", "cargo": "LADUNGSEINGABE", "planner": "TAKTIK-PLANER",
@@ -28,7 +32,9 @@ TRANSLATIONS = {
         "pcs": "STÜCK GESAMT", "weight": "BRUTTOGEWICHT", "util": "AUSLASTUNG", "kpi": "BETRIEBS-KPI",
         "ldm": "LDM BELEGT", "cog": "SCHWERPUNKTANALYSE", "axle_f": "VORDERACHSEN", 
         "axle_r": "HINTERACHSEN", "rotation": "ROTATION", "terminate": "BEENDEN",
-        "truss_2m": "TRAVERSEN 2M", "truss_3m": "TRAVERSEN 3M", "manifest": "LADUNGSMANIFEST"
+        "truss_2m": "TRAVERSEN 2M", "truss_3m": "TRAVERSEN 3M", "manifest": "LADUNGSMANIFEST",
+        "status_auth": "ZUGRIFF AUTORISIERT", "standard": "STANDARD", "pcs_unit": "STK/UNIT",
+        "sync": "SYNC DATENBANK"
     },
     "ES": {
         "fleet": "CONSOLA DE FLOTA", "cargo": "ENTRADA DE CARGA", "planner": "PLANIFICADOR",
@@ -38,6 +44,8 @@ TRANSLATIONS = {
         "pcs": "PIEZAS TOTALES", "weight": "PESO BRUTO", "util": "UTILIZACIÓN", "kpi": "KPI OPERATIVO",
         "ldm": "LDM OCUPADO", "cog": "CENTRO DE GRAVEDAD (CoG)", "axle_f": "EJES DELANTEROS", 
         "axle_r": "EJES TRASEROS", "rotation": "ROTACIÓN", "terminate": "TERMINAR",
-        "truss_2m": "TRUSS 2M", "truss_3m": "TRUSS 3M", "manifest": "MANIFIESTO DE CARGA"
+        "truss_2m": "TRUSS 2M", "truss_3m": "TRUSS 3M", "manifest": "MANIFIESTO DE CARGA",
+        "status_auth": "ACCESO AUTORIZADO", "standard": "ESTÁNDAR", "pcs_unit": "PZAS/UNID",
+        "sync": "SINCRONIZAR"
     }
 }
