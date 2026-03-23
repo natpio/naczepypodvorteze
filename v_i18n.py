@@ -10,7 +10,8 @@ TRANSLATIONS = {
         "axle_r": "OSIE TYŁ (REAR)", "rotation": "ROTACJA", "terminate": "ZAKOŃCZ SESJĘ",
         "truss_2m": "KRATY 2M (SZT)", "truss_3m": "KRATY 3M (SZT)", "manifest": "LISTA ZAŁADUNKOWA",
         "status_auth": "DOSTĘP ZAUTORYZOWANY", "standard": "STANDARD", "pcs_unit": "SZT/JEDN",
-        "sync": "SYNCHRONIZUJ BAZĘ"
+        "sync": "SYNCHRONIZUJ BAZĘ", "add_new": "DODAJ NOWY PRODUKT DO BAZY",
+        "length": "DŁUGOŚĆ", "width": "SZEROKOŚĆ", "height": "WYSOKOŚĆ"
     },
     "ENG": {
         "fleet": "FLEET CONSOLE", "cargo": "CARGO ENTRY", "planner": "TACTICAL PLANNER",
@@ -22,7 +23,8 @@ TRANSLATIONS = {
         "axle_r": "REAR AXLES", "rotation": "ROTATION", "terminate": "TERMINATE SESSION",
         "truss_2m": "TRUSS 2M (PCS)", "truss_3m": "TRUSS 3M (PCS)", "manifest": "PACKING LIST",
         "status_auth": "ACCESS AUTHORIZED", "standard": "STANDARD", "pcs_unit": "PCS/UNIT",
-        "sync": "SYNC DATABASE"
+        "sync": "SYNC DATABASE", "add_new": "ADD NEW PRODUCT TO DATABASE",
+        "length": "LENGTH", "width": "WIDTH", "height": "HEIGHT"
     },
     "DE": {
         "fleet": "FLOTTENKONSOLE", "cargo": "LADUNGSEINGABE", "planner": "TAKTIK-PLANER",
@@ -34,7 +36,8 @@ TRANSLATIONS = {
         "axle_r": "HINTERACHSEN", "rotation": "ROTATION", "terminate": "BEENDEN",
         "truss_2m": "TRAVERSEN 2M", "truss_3m": "TRAVERSEN 3M", "manifest": "LADUNGSMANIFEST",
         "status_auth": "ZUGRIFF AUTORISIERT", "standard": "STANDARD", "pcs_unit": "STK/UNIT",
-        "sync": "SYNC DATENBANK"
+        "sync": "SYNC DATENBANK", "add_new": "NEUES PRODUKT HINZUFÜGEN",
+        "length": "LÄNGE", "width": "BREITE", "height": "HÖHE"
     },
     "ES": {
         "fleet": "CONSOLA DE FLOTA", "cargo": "ENTRADA DE CARGA", "planner": "PLANIFICADOR",
@@ -46,6 +49,7 @@ TRANSLATIONS = {
         "axle_r": "EJES TRASEROS", "rotation": "ROTACIÓN", "terminate": "TERMINAR",
         "truss_2m": "TRUSS 2M", "truss_3m": "TRUSS 3M", "manifest": "MANIFIESTO DE CARGA",
         "status_auth": "ACCESO AUTORIZADO", "standard": "ESTÁNDAR", "pcs_unit": "PZAS/UNID",
-        "sync": "SINCRONIZAR"
+        "sync": "SINCRONIZAR", "add_new": "AÑADIR NUEVO PRODUCTO",
+        "length": "LONGITUD", "width": "ANCHO", "height": "ALTURA"
     }
 }
