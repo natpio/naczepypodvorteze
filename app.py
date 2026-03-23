@@ -7,10 +7,9 @@ from v_styles import apply_supreme_ui, load_vorteza_asset_b64
 from v_engine import VEngine
 from v_visuals import render_3d_supreme, get_pro_color
 
-# Inicjalizacja UI i Stylu
 apply_supreme_ui()
 
-# Autoryzacja PRO
+# Autoryzacja PRO (Naprawiony Formularz)
 if 'authorized' not in st.session_state: st.session_state.authorized = False
 if not st.session_state.authorized:
     sys_key = str(st.secrets.get("password", "vorteza2026"))
@@ -25,12 +24,12 @@ if not st.session_state.authorized:
                 else: st.error("INVALID KEY")
     st.stop()
 
-# Inicjalizacja Manifestu i Języka
+# Inicjalizacja Sesji
 if 'v_manifest' not in st.session_state: st.session_state.v_manifest = []
 if 'lang' not in st.session_state: st.session_state.lang = "PL"
 T = TRANSLATIONS[st.session_state.lang]
 
-# Baza danych SKU - Integracja z app3.py
+# Baza SKU (Restored from app3.py)
 def db_load():
     if os.path.exists('products.json'):
         try:
@@ -40,23 +39,22 @@ def db_load():
 
 inventory = db_load()
 
-# Rejestr Floty VORTEZA
+# Rejestr Floty (Restored from app3.py)
 FLEET = {
     "TIR Mega 13.6m": {"max_w": 24000, "L": 1360, "W": 248, "H": 300, "ax": 3, "cab": 230},
     "TIR Std 13.6m": {"max_w": 24000, "L": 1360, "W": 248, "H": 275, "ax": 3, "cab": 230},
     "Solo 9m Heavy Duty": {"max_w": 9500, "L": 920, "W": 245, "H": 270, "ax": 2, "cab": 200}
 }
 
-# SIDEBAR: Zarządzanie Misją
 with st.sidebar:
-    st.session_state.lang = st.radio("JĘZYK", ["PL", "ENG", "DE", "ES"], horizontal=True)
+    st.session_state.lang = st.radio("JĘZYK / LANGUAGE", ["PL", "ENG", "DE", "ES"], horizontal=True)
     st.markdown(f"### 📡 {T['fleet']}")
     v_sel = st.selectbox(T['unit'], list(FLEET.keys()))
     veh = FLEET[v_sel]
     x_off = st.slider(T['offset'], 0, veh['L']-200, 0)
     
     st.divider()
-    # RESTAURACJA FUNKCJI: Kalkulator Truss
+    # FUNKCJA PRZYWRÓCONA: Kalkulator Truss
     st.markdown(f"### 📐 {T['truss_calc']}")
     c1, c2 = st.columns(2)
     t2m, t3m = c1.number_input(T['truss_2m'], 0), c2.number_input(T['truss_3m'], 0)
@@ -68,7 +66,7 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    # RESTAURACJA FUNKCJI: Dodawanie Produktów
+    # FUNKCJA PRZYWRÓCONA: Dodawanie SKU z Bazy
     st.markdown(f"### 📥 {T['cargo']}")
     sku_list = [p['name'] for p in inventory]
     sku = st.selectbox(T['sku_sel'], sku_list, index=None)
@@ -82,7 +80,8 @@ with st.sidebar:
             st.rerun()
     if st.button(T['purge']): st.session_state.v_manifest = []; st.rerun()
 
-# MAIN TABS: PLANNER, INVENTORY, LOGS
+# Główny Ekran
+st.markdown(f"<h1>VORTEZA STACK</h1>", unsafe_allow_html=True)
 tab_p, tab_i, tab_l = st.tabs([f"📊 {T['planner']}", f"📦 {T['inventory']}", f"⚙️ LOGS"])
 
 with tab_p:
@@ -95,19 +94,19 @@ with tab_p:
         k4.metric(T['util'], f"{(tm_tot/veh['max_w'])*100:.1f}%")
         
         rem = [dict(u) for u in st.session_state.v_manifest]
-        fleet_res = []
+        assigned = []
         while rem:
             s, w, n, l = VEngine.pack(rem, veh, offset=x_off)
             if not s: st.error(T['oversize']); break
-            fleet_res.append({"s": s, "w": w, "l": l}); rem = n
+            assigned.append({"s": s, "w": w, "l": l}); rem = n
             
-        for idx, unit in enumerate(fleet_res):
+        for idx, unit in enumerate(assigned):
             st.markdown(f'<div class="v-tile-pro">', unsafe_allow_html=True)
             st.markdown(f"### MISSION UNIT #{idx+1} | {v_sel}")
             vc, dc = st.columns([2.8, 1])
             with vc:
                 st.plotly_chart(render_3d_supreme(veh, unit['s']), use_container_width=True)
-                # Load Balancer CoG
+                # CoG Balancer
                 tm_m, tw_m = 0, 0
                 for s_ in unit['s']:
                     for it in s_['items']: tm_m += (s_['x']+it['w_fit']/2)*it['weight']; tw_m += it['weight']
@@ -130,11 +129,11 @@ with tab_p:
     else: st.info("VORTEZA STACK: WAITING FOR MISSION DATA.")
 
 with tab_i:
-    # RESTAURACJA FUNKCJI: Zarządzanie Bazą Produktów
+    # FUNKCJA PRZYWRÓCONA: Zarządzanie Bazą Produktów
     st.markdown(f"### 📦 {T['inventory']}")
     if inventory:
         df_inv = pd.DataFrame(inventory)
-        edt = st.data_editor(df_inv, use_container_width=True, num_rows="dynamic", key="v36_editor")
+        edt = st.data_editor(df_inv, use_container_width=True, num_rows="dynamic", key="v37_editor")
         if st.button(T['sync']):
             with open('products.json', 'w', encoding='utf-8') as f: json.dump(edt.to_dict('records'), f, indent=4, ensure_ascii=False)
             st.success("SYNC OK")
@@ -154,4 +153,4 @@ with tab_i:
                 st.rerun()
 
 with tab_l:
-    st.code(f"SYSTEM: VORTEZA STACK v36.0\nCORE: APEX-SUPREME-ENGINE\nSTATUS: Operational", language="bash")
+    st.code(f"SYSTEM: VORTEZA STACK v37.0\nCORE: APEX-GOLIATH-ENGINE\nSTATUS: Operational", language="bash")
