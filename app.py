@@ -11,65 +11,61 @@ import io
 import time
 
 # ==============================================================================
-# 1. GLOBALNA ARCHITEKTURA I KONFIGURACJA SYSTEMOWA
+# 1. ARCHITEKTURA SYSTEMU I KONFIGURACJA GLOBALNA
 # ==============================================================================
 # Wymuszamy stan interfejsu odpowiedni dla stacji roboczej lub terminala mobilnego
 st.set_page_config(
-    page_title="VORTEZA FLOW | OMNIA v8.0",
+    page_title="VORTEZA FLOW | IMPERIAL v9.0",
     layout="wide",
     initial_sidebar_state="expanded",
     page_icon="🕋"
 )
 
 # --- REJESTR FLOTY VORTEZA SYSTEMS ---
-# Szczegółowa specyfikacja techniczna jednostek transportowych
+# Szczegółowa specyfikacja techniczna jednostek transportowych i parametry kosztowe
 FLEET_SPEC = {
     "TIR FTL (Mega)": {
         "max_w": 24000, "L": 1360, "W": 248, "H": 300, 
-        "ldm": 13.6, "fuel_avg": 0.30, "myto": 0.22, "tank": 1200
+        "ldm": 13.6, "fuel_avg": 0.30, "myto": 0.22, "tank": 1200, "desc": "Naczepa o podwyższonej kubaturze (Mega)"
     },
     "TIR FTL (Standard)": {
         "max_w": 24000, "L": 1360, "W": 248, "H": 275, 
-        "ldm": 13.6, "fuel_avg": 0.28, "myto": 0.20, "tank": 1000
+        "ldm": 13.6, "fuel_avg": 0.28, "myto": 0.20, "tank": 1000, "desc": "Standardowa naczepa kurtynowa"
     },
     "Solo 9m (Heavy)": {
         "max_w": 9000, "L": 920, "W": 245, "H": 270, 
-        "ldm": 9.2, "fuel_avg": 0.24, "myto": 0.18, "tank": 500
+        "ldm": 9.2, "fuel_avg": 0.24, "myto": 0.18, "tank": 500, "desc": "Ciężkie podwozie dystrybucyjne"
     },
     "Solo 7m (Medium)": {
         "max_w": 7000, "L": 720, "W": 245, "H": 260, 
-        "ldm": 7.2, "fuel_avg": 0.20, "myto": 0.15, "tank": 400
+        "ldm": 7.2, "fuel_avg": 0.20, "myto": 0.15, "tank": 400, "desc": "Średnie podwozie dystrybucyjne"
     },
     "BUS (Express XL)": {
         "max_w": 1200, "L": 485, "W": 175, "H": 220, 
-        "ldm": 4.8, "fuel_avg": 0.11, "myto": 0.00, "tank": 90
+        "ldm": 4.8, "fuel_avg": 0.11, "myto": 0.00, "tank": 90, "desc": "Transport ekspresowy / bus"
     }
 }
 
 # ==============================================================================
 # 2. VORTEZA PRESTIGE DESIGN SYSTEM (ADVANCED CSS)
 # ==============================================================================
-def apply_vorteza_omnia_theme():
-    """Wstrzykuje zaawansowany arkusz stylów CSS VORTEZA Omna Edition."""
+def apply_vorteza_theme():
+    """Wstrzykuje zaawansowany arkusz stylów CSS VORTEZA Imperial Edition."""
     st.markdown("""
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700&family=JetBrains+Mono:wght@300;500&display=swap');
             
             :root {
                 --v-copper: #B58863;
-                --v-copper-dim: rgba(181, 136, 99, 0.4);
+                --v-gold: #D4AF37;
                 --v-dark-bg: #050505;
                 --v-card-bg: rgba(12, 12, 12, 0.99);
-                --v-border: rgba(181, 136, 99, 0.2);
-                --v-text-gold: #D4AF37;
+                --v-border: rgba(181, 136, 99, 0.25);
+                --v-success: #2ecc71;
             }
 
-            /* Global App Base */
-            .stApp { 
-                background-color: var(--v-dark-bg); 
-                color: #F0F0F0; 
-                font-family: 'Montserrat', sans-serif; 
-            }
+            /* Global Base */
+            .stApp { background-color: var(--v-dark-bg); color: #F0F0F0; font-family: 'Montserrat', sans-serif; }
             
             /* Sidebar Optimization */
             section[data-testid="stSidebar"] {
@@ -78,8 +74,8 @@ def apply_vorteza_omnia_theme():
                 width: 420px !important;
             }
 
-            /* Omnia High-End Cards */
-            .v-omnia-card {
+            /* Imperial Cards */
+            .v-imperial-card {
                 background: var(--v-card-bg);
                 padding: 2.5rem;
                 border-radius: 2px;
@@ -90,25 +86,20 @@ def apply_vorteza_omnia_theme():
                 backdrop-filter: blur(25px);
             }
 
-            /* Typography */
-            h1, h2, h3 { 
-                color: var(--v-copper) !important; 
-                text-transform: uppercase; 
-                letter-spacing: 8px !important; 
-                font-weight: 700 !important; 
-                text-shadow: 4px 4px 8px rgba(0,0,0,0.8);
-            }
-            .v-sub { color: #555; font-size: 0.7rem; letter-spacing: 3px; font-weight: 400; }
+            /* Headers */
+            h1, h2, h3 { color: var(--v-copper) !important; text-transform: uppercase; letter-spacing: 8px !important; font-weight: 700 !important; }
+            .v-sub { color: #555; font-size: 0.7rem; letter-spacing: 3px; font-weight: 400; text-transform: uppercase; }
 
             /* Metrics & KPI */
             [data-testid="stMetricValue"] { 
                 color: var(--v-copper) !important; 
                 font-family: 'JetBrains Mono', monospace !important; 
-                font-size: 3rem !important;
+                font-size: 3.2rem !important;
                 font-weight: 500 !important;
+                text-shadow: 0 0 15px rgba(181, 136, 99, 0.4);
             }
 
-            /* Buttons & Interactivity */
+            /* Interactivity */
             .stButton > button {
                 background: rgba(10, 10, 10, 0.8);
                 color: var(--v-copper);
@@ -127,28 +118,22 @@ def apply_vorteza_omnia_theme():
                 transform: scale(1.02);
             }
 
-            /* Pro Tables */
+            /* Tables & Data */
             .v-table-pro { width: 100%; border-collapse: collapse; margin-top: 30px; }
-            .v-table-pro th { 
-                color: var(--v-copper); 
-                text-align: left; 
-                font-size: 0.7rem; 
-                text-transform: uppercase; 
-                border-bottom: 2px solid #333; 
-                padding: 20px; 
-                letter-spacing: 2px;
-            }
+            .v-table-pro th { color: var(--v-copper); text-align: left; font-size: 0.7rem; text-transform: uppercase; border-bottom: 2px solid #333; padding: 20px; }
             .v-table-pro td { padding: 18px 20px; border-bottom: 1px solid #151515; font-size: 0.9rem; color: #AAA; }
 
-            /* Inventory Tooltip */
-            .unit-box {
-                background: rgba(181, 136, 99, 0.02);
-                border: 1px solid var(--v-copper-dim);
+            /* Terminal View */
+            .v-terminal {
+                background: #000;
+                color: var(--v-success);
+                font-family: 'JetBrains Mono', monospace;
                 padding: 15px;
-                margin: 15px 0;
-                font-size: 0.8rem;
-                color: #888;
-                border-radius: 1px;
+                border: 1px solid #222;
+                font-size: 0.75rem;
+                max-height: 250px;
+                overflow-y: auto;
+                border-left: 3px solid var(--v-success);
             }
         </style>
     """, unsafe_allow_html=True)
@@ -163,7 +148,6 @@ def authenticate_vorteza():
 
     if not st.session_state.authorized:
         try:
-            # Hasło pobierane z Streamlit Secrets
             sys_pass = str(st.secrets.get("password", "vorteza2026"))
         except:
             sys_pass = "vorteza2026"
@@ -171,7 +155,7 @@ def authenticate_vorteza():
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns([1, 1.8, 1])
         with c2:
-            with st.form("OmniaAuth"):
+            with st.form("ImperialAuth"):
                 st.markdown("<h2 style='text-align:center;'>VORTEZA LOGIN</h2>", unsafe_allow_html=True)
                 st.markdown("<p style='text-align:center; color:#444; font-size:0.7rem;'>SECURITY CLEARANCE REQUIRED</p>", unsafe_allow_html=True)
                 k_in = st.text_input("GOLIATH MASTER KEY", type="password")
@@ -185,53 +169,54 @@ def authenticate_vorteza():
     return True
 
 # ==============================================================================
-# 4. CHROMATYCZNY SILNIK KOLORÓW (PRODUCT COLOR ENGINE)
+# 4. RDZEŃ KOLORYSTYCZNY (CHROMATIC ENGINE)
 # ==============================================================================
-def get_vorteza_color(name):
-    """Generuje stabilny, unikalny kolor dla każdego produktu bazując na jego nazwie."""
-    # Paleta "Vorteza Industrial" - odcienie miedzi, złota, szarości i głębokich błękitów
-    palette = [
+def get_product_color(name):
+    """Zwraca unikalny, powtarzalny kolor dla danego produktu na podstawie jego nazwy."""
+    # Definiujemy paletę Vorteza Metallic (Miedzie, Złota, Szarości, Głębokie kolory)
+    metallic_palette = [
         "#B58863", "#D4AF37", "#8E6A4D", "#5E4633", "#A67C52", 
         "#4A4A4A", "#2F2F2F", "#1A252F", "#2C3E50", "#34495E",
         "#7F8C8D", "#95A5A6", "#BDC3C7", "#7E4A35", "#C0392B",
-        "#D35400", "#F39C12", "#27AE60", "#2980B9", "#8E44AD"
+        "#D35400", "#F39C12", "#27AE60", "#2980B9", "#8E44AD",
+        "#2C3E50", "#E67E22", "#E74C3C", "#1ABC9C", "#16A085"
     ]
-    # Używamy hasha nazwy produktu jako ziarna dla generatora, aby kolor był zawsze ten sam
+    # Używamy sumy kodów ASCII nazwy jako ziarna dla generatora, aby kolor był stały
     random.seed(sum(ord(c) for c in name))
-    return random.choice(palette)
+    return random.choice(metallic_palette)
 
 # ==============================================================================
-# 5. RENDERER 3D CAD-OMNIA (VISUAL ENGINE)
+# 5. RENDERER 3D CAD-IMPERIAL (VISUAL ENGINE)
 # ==============================================================================
-def render_omnia_3d(vehicle, stacks):
-    """Generuje zaawansowany model 3D naczepy z unikalnym kolorowaniem produktów."""
+def render_imperial_3d(vehicle, stacks):
+    """Generuje zaawansowany model 3D naczepy z dynamicznym kolorowaniem produktów."""
     fig = go.Figure()
     L, W, H = vehicle['L'], vehicle['W'], vehicle['H']
 
     # --- INFRASTRUKTURA POJAZDU ---
-    # Podstawa naczepy (Chassis)
+    # Rama główna (Chassis)
     fig.add_trace(go.Mesh3d(
         x=[0, L, L, 0], y=[0, 0, W, W], z=[-5, -5, -5, -5],
-        color='#111', opacity=1, hoverinfo='skip'
+        color='#151515', opacity=1, hoverinfo='skip'
     ))
     
-    # Koła (Modelowanie techniczne)
-    wheel_pos = [150, 220, 290, L-100, L-170]
+    # Koła (Modelowanie CAD)
+    wheel_pos = [150, 220, 290, L-100, L-170, L-240]
     for wp in wheel_pos:
         if wp < L:
             for side in [-25, W+15]:
                 fig.add_trace(go.Mesh3d(
                     x=[wp-35, wp+35, wp+35, wp-35], y=[side, side, side+10, side+10], 
-                    z=[-40, -40, -5, -5], color='#000', opacity=1, hoverinfo='skip'
+                    z=[-45, -45, -5, -5], color='#000', opacity=1, hoverinfo='skip'
                 ))
 
-    # Kabina (Industrial Block CAD)
+    # Kabina (Industrial CAD Block)
     fig.add_trace(go.Mesh3d(
-        x=[-160, 0, 0, -160, -160, 0, 0, -160],
-        y=[-15, -15, W+15, W+15, -15, -15, W+15, W+15],
-        z=[0, 0, 0, 0, H*0.9, H*0.9, H*0.9, H*0.9],
+        x=[-170, 0, 0, -170, -170, 0, 0, -170],
+        y=[-20, -20, W+20, W+20, -20, -20, W+20, W+20],
+        z=[0, 0, 0, 0, H*0.95, H*0.95, H*0.95, H*0.95],
         i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6],
-        color='#050505', opacity=1, name="COMMAND_CAB"
+        color='#080808', opacity=1, name="UNIT_COMMAND_CAB"
     ))
 
     # Klatka Naczepy (Miedziane krawędzie konstrukcyjne)
@@ -241,25 +226,25 @@ def render_omnia_3d(vehicle, stacks):
         ([L, L], [0, 0], [0, H]), ([L, L], [W, W], [0, H])
     ]
     for xc, yc, zc in cage:
-        fig.add_trace(go.Scatter3d(x=xc, y=yc, z=zc, mode='lines', line=dict(color='#B58863', width=5), hoverinfo='skip'))
+        fig.add_trace(go.Scatter3d(x=xc, y=yc, z=zc, mode='lines', line=dict(color='#B58863', width=6), hoverinfo='skip'))
 
-    # --- RENDER ŁADUNKU (DYNAMIC COLORS) ---
+    # --- RENDER ŁADUNKU (DYNAMIC CHROMATIC MAPPING) ---
     for stack in stacks:
         for item in stack['items']:
             x, y, z = stack['x'], stack['y'], item['z']
             dx, dy, dz = item['w_fit'], item['l_fit'], item['height']
             
-            # Pobieramy unikalny kolor dla tego produktu
-            p_color = get_vorteza_color(item['name'])
+            # Pobieramy kolor dedykowany dla tego konkretnego produktu
+            product_color = get_product_color(item['name'])
             
             # Bryła produktu
             fig.add_trace(go.Mesh3d(
                 x=[x,x+dx,x+dx,x,x,x+dx,x+dx,x], y=[y,y,y+dy,y+dy,y,y,y+dy,y+dy], 
                 z=[z,z,z,z,z+dz,z+dz,z+dz,z+dz],
                 i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6],
-                color=p_color, opacity=0.98, name=item['name']
+                color=product_color, opacity=0.98, name=item['name']
             ))
-            # Kontur dla czytelności (Krawędzie)
+            # Kontur (Edge Separation)
             fig.add_trace(go.Scatter3d(
                 x=[x,x+dx,x+dx,x,x,x,x+dx,x+dx,x,x,x+dx,x+dx,x+dx,x+dx,x,x],
                 y=[y,y,y+dy,y+dy,y,y,y,y+dy,y+dy,y+dy,y+dy,y,y,y+dy,y+dy,y],
@@ -277,31 +262,31 @@ def render_omnia_3d(vehicle, stacks):
     return fig
 
 # ==============================================================================
-# 6. RDZEŃ OPTYMALIZACJI (V-ENGINE 8.0)
+# 6. SILNIK OPTYMALIZACJI (V-ENGINE 9.0 IMPERIAL)
 # ==============================================================================
-class V8Engine:
-    """Zaawansowany algorytm bin packing z kontrolą wielu parametrów."""
+class V9Engine:
+    """Zaawansowany algorytm bin packing z kontrolą masy i rotacją 3D."""
     
     @staticmethod
     def pack(cargo, veh):
-        # Priorytetyzacja: 1. Brak możliwości piętrowania (ciężkie), 2. Pole powierzchni (L*W)
-        sorted_items = sorted(cargo, key=lambda x: (not x.get('canStack', True), x['width']*x['length']), reverse=True)
+        # Priorytetyzacja: 1. Brak możliwości piętrowania, 2. Pole powierzchni (L*W)
+        sorted_cargo = sorted(cargo, key=lambda x: (not x.get('canStack', True), x['width']*x['length']), reverse=True)
         
         stacks, failed, weight_sum = [], [], 0
         cx, cy, current_row_max_w = 0, 0, 0
 
-        for it in sorted_items:
-            # Sprawdzenie masy dopuszczalnej
+        for it in sorted_cargo:
+            # Sprawdzenie masy dopuszczalnej pojazdu
             if weight_sum + it['weight'] > veh['max_w']:
                 failed.append(it); continue
             
-            # Próba piętrowania (Stacking Logic)
+            # Próba piętrowania (Stacking Heuristics)
             stacked = False
             if it.get('canStack', True):
                 for s in stacks:
-                    # Sprawdzenie wymiarów z uwzględnieniem rotacji 90 st.
-                    dim_match = (it['width'] <= s['w'] and it['length'] <= s['l']) or (it['length'] <= s['w'] and it['width'] <= s['l'])
-                    if dim_match and (s['curH'] + it['height'] <= veh['H']):
+                    # Sprawdzenie wymiarów z uwzględnieniem rotacji 90 stopni
+                    match = (it['width'] <= s['w'] and it['length'] <= s['l']) or (it['length'] <= s['w'] and it['width'] <= s['l'])
+                    if match and (s['curH'] + it['height'] <= veh['H']):
                         it_c = it.copy(); it_c['z'] = s['curH']
                         it_c['w_fit'], it_c['l_fit'] = s['w'], s['l']
                         s['items'].append(it_c); s['curH'] += it['height']
@@ -309,7 +294,7 @@ class V8Engine:
             
             if stacked: continue
 
-            # Próba zajęcia nowej powierzchni podłogi (Floor Logic)
+            # Próba zajęcia nowej powierzchni podłogi (Floor Placement + Auto-Rotation)
             placed = False
             orientations = [(it['width'], it['length']), (it['length'], it['width'])]
             for fw, fl in orientations:
@@ -325,48 +310,54 @@ class V8Engine:
             
             if not placed: failed.append(it)
         
+        # Obliczanie realnego wykorzystania LDM (Loading Meters)
         ldm_real = max([s['x'] + s['w'] for s in stacks]) / 100 if stacks else 0
         return stacks, weight_sum, failed, ldm_real
 
 # ==============================================================================
 # 7. ZARZĄDZANIE DANYMI (INVENTORY MODULE)
 # ==============================================================================
-def load_db():
+def load_v_inventory():
     try:
         with open('products.json', 'r', encoding='utf-8') as f: return json.load(f)
     except: return []
 
-def save_db(data):
+def save_v_inventory(data):
     with open('products.json', 'w', encoding='utf-8') as f: json.dump(data, f, indent=4, ensure_ascii=False)
 
+def log_system_event(msg):
+    if 'v_logs' not in st.session_state: st.session_state.v_logs = []
+    ts = datetime.now().strftime("%H:%M:%S")
+    st.session_state.v_logs.append(f"[{ts}] {msg}")
+
 # ==============================================================================
-# 8. GŁÓWNA APLIKACJA (OMNIA CONTROL CENTER)
+# 8. GŁÓWNA APLIKACJA (IMPERIAL COMMAND CENTER)
 # ==============================================================================
 def main():
-    apply_vorteza_omnia_theme()
+    apply_vorteza_theme()
     
     if not authenticate_vorteza(): return
 
-    # Inicjalizacja Manifestu w sesji
+    # Inicjalizacja Manifestu
     if 'v_manifest' not in st.session_state: st.session_state.v_manifest = []
-    inventory = load_db()
+    inventory = load_v_inventory()
 
     # --- TOP NAVBAR ---
     h_col1, h_col2 = st.columns([5, 1])
     with h_col1:
-        st.markdown("<h1>VORTEZA OMNIA FLOW</h1>", unsafe_allow_html=True)
-        st.markdown(f"<p class='v-sub'>INTEGRATED COMMAND TERMINAL | v8.0.01 | STATUS: ONLINE</p>", unsafe_allow_html=True)
+        st.markdown("<h1>VORTEZA IMPERIAL FLOW</h1>", unsafe_allow_html=True)
+        st.markdown(f"<p class='v-sub'>LOGISTICS ARCHITECTURE v9.0 | CORE STATUS: ACTIVE | {datetime.now().strftime('%H:%M:%S')}</p>", unsafe_allow_html=True)
     with h_col2:
-        if st.button("TERMINATE SESSION"):
+        if st.button("TERMINATE"):
             st.session_state.authorized = False; st.rerun()
 
     # --- SIDEBAR CONTROL ---
     with st.sidebar:
-        st.markdown("### 🛰️ COMMAND CENTER")
+        st.markdown("### 📡 COMMAND CENTER")
         v_sel_name = st.selectbox("SELECT FLEET UNIT", list(FLEET_SPEC.keys()))
         veh_active = FLEET_SPEC[v_sel_name]
         
-        st.markdown(f"""<div class='unit-box'>
+        st.markdown(f"""<div style='background:rgba(181,136,99,0.05); border:1px solid rgba(181,136,99,0.3); padding:15px; font-size:0.8rem; color:#888;'>
             <b>UNIT SPECS:</b><br>
             VOLUME: {veh_active['L']}x{veh_active['W']}x{veh_active['H']} cm<br>
             PAYLOAD: {veh_active['max_w']} kg<br>
@@ -381,23 +372,23 @@ def main():
         if sel_p_name:
             p_obj = next(p for p in inventory if p['name'] == sel_p_name)
             ipc = p_obj.get('itemsPerCase', 1)
-            st.markdown(f"<p style='color:var(--v-copper); font-size:0.7rem;'>PACKAGING: {ipc} pcs/case</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color:var(--v-copper); font-size:0.7rem;'>PACKAGING: {ipc} pcs/unit</p>", unsafe_allow_html=True)
             in_qty = st.number_input("TOTAL PCS TO SHIP", min_value=1, value=ipc)
             n_cases = math.ceil(in_qty / ipc)
             
             if st.button("APPEND TO MANIFEST", type="primary"):
                 for i in range(n_cases):
                     unit = p_obj.copy()
-                    # Przeliczenie realnej liczby sztuk w każdym opakowaniu
                     unit['p_actual'] = ipc if (i < n_cases - 1 or in_qty % ipc == 0) else (in_qty % ipc)
                     st.session_state.v_manifest.append(unit)
-                st.toast(f"Synchronized: {n_cases} cases added.")
+                log_system_event(f"Added {n_cases} cases of {sel_p_name}")
+                st.toast(f"Synchronized: {n_cases} units added.")
 
         if st.button("PURGE MANIFEST DATA"):
-            st.session_state.v_manifest = []; st.rerun()
+            st.session_state.v_manifest = []; log_system_event("Manifest cleared."); st.rerun()
 
     # --- MAIN VIEW TABS ---
-    tab_plan, tab_inv, tab_fin, tab_ana = st.tabs(["📊 PLANNER", "📦 INVENTORY", "💰 COSTS", "📈 ANALYTICS"])
+    tab_plan, tab_inv, tab_ana, tab_log = st.tabs(["📊 IMPERIAL PLANNER", "📦 INVENTORY", "📈 ANALYTICS", "⚙️ TERMINAL"])
 
     # --------------------------------------------------------------------------
     # TAB 1: PLANNER ZAŁADUNKU
@@ -419,7 +410,7 @@ def main():
             fleet_plan = []
             
             while rem_cargo:
-                stacks, w_res, not_p, ldm_r = V8Engine.pack(rem_cargo, veh_active)
+                stacks, w_res, not_p, ldm_r = V9Engine.pack(rem_cargo, veh_active)
                 if not stacks: break
                 fleet_plan.append({"stacks": stacks, "weight": w_res, "ldm": ldm_r})
                 rem_cargo = not_p
@@ -427,12 +418,12 @@ def main():
             st.markdown(f"### ASSIGNED FLEET UNITS: {len(fleet_plan)}")
             
             for idx, unit in enumerate(fleet_plan):
-                st.markdown(f'<div class="v-omnia-card">', unsafe_allow_html=True)
+                st.markdown(f'<div class="v-imperial-card">', unsafe_allow_html=True)
                 st.markdown(f"### UNIT #{idx+1} | {v_sel_name}", unsafe_allow_html=True)
                 
                 c_3d, c_dat = st.columns([2, 1])
                 with c_3d:
-                    st.plotly_chart(render_omnia_3d(veh_active, unit['stacks']), use_container_width=True)
+                    st.plotly_chart(render_imperial_3d(veh_active, unit['stacks']), use_container_width=True)
                 with c_dat:
                     st.markdown("**OPERATIONAL PERFORMANCE**")
                     st.write(f"Mass Utilization: {(unit['weight']/veh_active['max_w'])*100:.1f}%")
@@ -447,7 +438,9 @@ def main():
                         
                         html = '<table class="v-table-pro"><tr><th>SKU</th><th>UNIT QTY</th></tr>'
                         for _, r in counts.iterrows():
-                            html += f'<tr><td>{r["Product"]}</td><td>{r["Cases"]}</td></tr>'
+                            # Pobranie koloru dla wiersza tabeli (opcjonalnie dla spójności)
+                            c = get_product_color(r['Product'])
+                            html += f'<tr><td><span style="color:{c};">■</span> {r["Product"]}</td><td>{r["Cases"]}</td></tr>'
                         st.markdown(html+'</table>', unsafe_allow_html=True)
                 st.markdown('</div>', unsafe_allow_html=True)
         else:
@@ -459,19 +452,20 @@ def main():
     with tab_inv:
         st.markdown("### 📦 PRODUCT CORE DATABASE")
         
-        with st.expander("➕ DEFINE NEW PRODUCT SKR"):
+        with st.expander("➕ DEFINE NEW PRODUCT SPECIFICATION"):
             with st.form("AddP"):
                 f_name = st.text_input("Product Name / SKU")
                 c1, c2, c3 = st.columns(3)
-                f_l = c1.number_input("L (cm)", 120)
-                f_w = c2.number_input("W (cm)", 80)
-                f_h = c3.number_input("H (cm)", 100)
+                f_l = c1.number_input("Length (cm)", 120)
+                f_w = c2.number_input("Width (cm)", 80)
+                f_h = c3.number_input("Height (cm)", 100)
                 f_weight = st.number_input("Weight (kg)", 50)
                 f_ipc = st.number_input("Items/Case", 1)
                 f_stk = st.checkbox("Stackable Unit", True)
                 if st.form_submit_button("COMMIT TO CORE"):
                     inventory.append({"name": f_name, "length": f_l, "width": f_w, "height": f_h, "weight": f_weight, "itemsPerCase": f_ipc, "canStack": f_stk})
-                    save_db(inventory)
+                    save_v_inventory(inventory)
+                    log_system_event(f"Database synchronized: New product {f_name}")
                     st.success("Synchronized."); st.rerun()
 
         st.divider()
@@ -479,38 +473,14 @@ def main():
             df_i = pd.DataFrame(inventory)
             ed_df = st.data_editor(df_i, use_container_width=True, num_rows="dynamic")
             if st.button("PUSH DATABASE CHANGES"):
-                save_db(ed_df.to_dict('records'))
+                save_v_inventory(ed_df.to_dict('records'))
+                log_system_event("Database manual override sync completed.")
                 st.success("Global database updated.")
         else:
             st.warning("Database empty.")
 
     # --------------------------------------------------------------------------
-    # TAB 3: FINANCIAL ANALYSIS
-    # --------------------------------------------------------------------------
-    with tab_fin:
-        st.markdown("### 💰 TRANSPORT COST INTELLIGENCE")
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown('<div class="v-omnia-card">', unsafe_allow_html=True)
-            dist = st.number_input("Total Route Distance (km)", 100, 5000, 1000)
-            fuel_price = st.number_input("ON Price (PLN/L)", 5.0, 10.0, 6.45)
-            st.markdown('</div>', unsafe_allow_html=True)
-        with c2:
-            st.markdown('<div class="v-omnia-card">', unsafe_allow_html=True)
-            total_fuel = dist * veh_active['fuel_avg']
-            fuel_cost = total_fuel * fuel_price
-            tolls = dist * veh_active['myto'] * 4.35 # Przelicznik EUR->PLN
-            
-            st.markdown(f"**Calculated for: {v_sel_name}**")
-            st.write(f"Fuel Consumption: {total_fuel:.1f} L")
-            st.write(f"Fuel Cost: {fuel_cost:.2f} PLN")
-            st.write(f"EU Tolls (Est): {tolls:.2f} PLN")
-            st.divider()
-            st.markdown(f"#### TOTAL OPERATING COST: <span style='color:var(--v-copper);'>{(fuel_cost + tolls):,.2f} PLN</span>", unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-
-    # --------------------------------------------------------------------------
-    # TAB 4: ADVANCED ANALYTICS
+    # TAB 3: ADVANCED ANALYTICS
     # --------------------------------------------------------------------------
     with tab_ana:
         st.markdown("### 📈 FLEET PERFORMANCE DATA")
@@ -518,13 +488,22 @@ def main():
             an_df = pd.DataFrame(st.session_state.v_manifest)
             c1, c2 = st.columns(2)
             with c1:
-                fig_pie = px.pie(an_df, names='name', title="Weight Share per SKU", hole=0.5, color_discrete_sequence=px.colors.sequential.copper)
+                # FIX: Używamy 'Copper' wielką literą, aby uniknąć AttributeError
+                fig_pie = px.pie(an_df, names='name', title="Weight Share per SKU", hole=0.5, color_discrete_sequence=px.colors.sequential.Copper)
                 st.plotly_chart(fig_pie, use_container_width=True)
             with c2:
-                fig_bar = px.bar(an_df, x='name', y='weight', title="Mass Contribution (KG)", color='weight', color_continuous_scale='copper')
+                fig_bar = px.bar(an_df, x='name', y='weight', title="Mass Contribution (KG)", color='weight', color_continuous_scale='Copper')
                 st.plotly_chart(fig_bar, use_container_width=True)
         else:
             st.info("No data in manifest for analysis.")
+
+    # --------------------------------------------------------------------------
+    # TAB 4: SYSTEM TERMINAL
+    # --------------------------------------------------------------------------
+    with tab_log:
+        st.markdown("### ⚙️ SYSTEM TERMINAL LOGS")
+        log_txt = "\n".join(st.session_state.get('v_logs', ["Terminal initialized..."]))
+        st.markdown(f'<div class="v-terminal">{log_txt}</div>', unsafe_allow_html=True)
 
 if __name__ == "__main__":
     main()
