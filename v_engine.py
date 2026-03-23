@@ -4,12 +4,13 @@ import math
 class VEngine:
     @staticmethod
     def pack(cargo, veh, offset=0):
-        # Sortowanie FFD
+        # Sortowanie towaru pod załadunek
         items = sorted(cargo, key=lambda x: (not x.get('canStack', True), not x.get('allowRotation', True), x['width']*x['length']), reverse=True)
         stacks, failed, mass = [], [], 0
         cx, cy, r_max_w = offset, 0, 0
         for u in items:
             if mass + u['weight'] > veh['max_w']: failed.append(u); continue
+            # Logika Stacking
             stacked = False
             if u.get('canStack', True):
                 for s in stacks:
@@ -19,6 +20,7 @@ class VEngine:
                         uc = u.copy(); uc['z'] = s['curH']; uc['w_fit'], uc['l_fit'] = s['w'], s['l']
                         s['items'].append(uc); s['curH'] += u['height']; mass += u['weight']; stacked = True; break
             if stacked: continue
+            # Logika Podłogi
             placed = False
             rots = [(u['width'], u['length']), (u['length'], u['width'])] if u.get('allowRotation', True) else [(u['width'], u['length'])]
             for fw, fl in rots:
