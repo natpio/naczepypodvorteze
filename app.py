@@ -3,256 +3,206 @@ import json
 import plotly.graph_objects as go
 import math
 import pandas as pd
-import random
 
-# --- 1. KONFIGURACJA I PREMIUM UI ---
-st.set_page_config(page_title="SQM Logistics Planner PRO", layout="wide", initial_sidebar_state="expanded")
+# --- 1. KONFIGURACJA I STYLIZACJA ---
+st.set_page_config(page_title="SQM Logistics Planner PRO", layout="wide")
 
-def apply_custom_style():
-    st.markdown("""
-        <style>
-        [data-testid="stMetricValue"] { font-size: 1.8rem; color: #007bff; }
-        .stPlotlyChart { border-radius: 15px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .vehicle-card { 
-            padding: 20px; border-radius: 15px; background: white; 
-            border-left: 5px solid #007bff; margin-bottom: 20px; 
-        }
-        </style>
+st.markdown("""
+    <style>
+    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #e0e0e0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .unit-box { background-color: #e3f2fd; padding: 10px; border-radius: 5px; border-left: 5px solid #2196f3; margin: 10px 0; }
+    footer {visibility: hidden;}
+    </style>
     """, unsafe_allow_html=True)
 
-apply_custom_style()
-
-# --- 2. LOGIKA BIZNESOWA I DANE ---
+# --- 2. DANE I PARAMETRY ---
 VEHICLES = {
-    "BUS (3.5t)": {"maxWeight": 1100, "L": 450, "W": 170, "H": 210, "color": "#A0A0A0"},
-    "Solo 6m": {"maxWeight": 3500, "L": 600, "W": 245, "H": 250, "color": "#505050"},
-    "Solo 7m": {"maxWeight": 7000, "L": 720, "W": 245, "H": 270, "color": "#303030"},
-    "TIR FTL": {"maxWeight": 24000, "L": 1360, "W": 248, "H": 270, "color": "#101010"}
+    "BUS (3.5t)": {"maxWeight": 1100, "L": 450, "W": 170, "H": 210},
+    "Solo 6m": {"maxWeight": 3500, "L": 600, "W": 245, "H": 250},
+    "Solo 7m": {"maxWeight": 7000, "L": 720, "W": 245, "H": 270},
+    "TIR FTL": {"maxWeight": 24000, "L": 1360, "W": 248, "H": 270}
 }
 
 def load_products():
     try:
         with open('products.json', 'r', encoding='utf-8') as f:
             data = json.load(f)
+            # Upewnienie się, że każdy produkt ma parametr itemsPerCase
+            for p in data:
+                if 'itemsPerCase' not in p or p['itemsPerCase'] < 1:
+                    p['itemsPerCase'] = 1
             return sorted(data, key=lambda x: x.get('name', ''))
-    except Exception as e:
-        st.error(f"Błąd bazy danych: {e}")
+    except:
         return []
 
-# --- 3. SILNIK OPTYMALIZACJI (Packing Engine) ---
-def optimize_packing(items, vehicle):
-    """
-    Ulepszony algorytm First-Fit Decreasing z rotacją i sprawdzaniem stosowalności.
-    """
-    # Sortowanie: najpierw te, których nie można piętrować, potem wg pola podstawy
-    items = sorted(items, key=lambda x: (not x.get('canStack', True), x['length'] * x['width']), reverse=True)
+# --- 3. ALGORYTM PAKOWANIA (3D Bin Packing Logic) ---
+def pack_items(cargo_list, vehicle):
+    # Sortowanie: najpierw największa podstawa (L*W)
+    sorted_items = sorted(cargo_list, key=lambda x: (x['length'] * x['width']), reverse=True)
     
     placed_stacks = []
     not_placed = []
-    total_weight = 0
+    current_weight = 0
     
-    # Grid-based packing (prosty, ale czytelny dla logistyka)
+    # Prosty algorytm warstwowy (Shelf-based)
     curr_x, curr_y, row_max_width = 0, 0, 0
     
-    for it in items:
-        if total_weight + it['weight'] > vehicle['maxWeight']:
-            not_placed.append(it)
+    for item in sorted_items:
+        if current_weight + item['weight'] > vehicle['maxWeight']:
+            not_placed.append(item)
             continue
             
-        fit_found = False
-        
-        # 1. Próba piętrowania na istniejących stosach
-        if it.get('canStack', True):
+        stacked = False
+        # Próba piętrowania
+        if item.get('canStack', True):
             for s in placed_stacks:
-                # Sprawdź wymiary (z rotacją 90st)
-                can_fit_dims = (it['width'] <= s['w'] and it['length'] <= s['l']) or \
-                               (it['length'] <= s['w'] and it['width'] <= s['l'])
-                if can_fit_dims and (s['curH'] + it['height'] <= vehicle['H']):
-                    it_copy = it.copy()
-                    it_copy['z'] = s['curH']
-                    s['items'].append(it_copy)
-                    s['curH'] += it['height']
-                    total_weight += it['weight']
-                    fit_found = True
-                    break
+                # Sprawdź czy pasuje wymiarami (podstawa) i czy nie za wysoko
+                if ((item['width'] <= s['w'] and item['length'] <= s['l']) or 
+                    (item['length'] <= s['w'] and item['width'] <= s['l'])):
+                    if s['curH'] + item['height'] <= vehicle['H']:
+                        it_copy = item.copy()
+                        it_copy['z'] = s['curH']
+                        s['items'].append(it_copy)
+                        s['curH'] += item['height']
+                        current_weight += item['weight']
+                        stacked = True
+                        break
         
-        if fit_found: continue
+        if not stacked:
+            # Próba postawienia na podłodze (z rotacją)
+            w, l = item['width'], item['length']
+            fit = False
+            for fw, fl in [(w, l), (l, w)]:
+                if curr_y + fl <= vehicle['W'] and curr_x + fw <= vehicle['L']:
+                    it_copy = item.copy()
+                    it_copy['z'] = 0
+                    placed_stacks.append({'x': curr_x, 'y': curr_y, 'w': fw, 'l': fl, 'curH': item['height'], 'items': [it_copy]})
+                    curr_y += fl
+                    row_max_width = max(row_max_width, fw)
+                    fit = True; break
+                elif curr_x + row_max_width + fw <= vehicle['L'] and fl <= vehicle['W']:
+                    curr_x += row_max_width
+                    curr_y = 0
+                    row_max_width = fw
+                    it_copy = item.copy()
+                    it_copy['z'] = 0
+                    placed_stacks.append({'x': curr_x, 'y': curr_y, 'w': fw, 'l': fl, 'curH': item['height'], 'items': [it_copy]})
+                    curr_y += fl
+                    fit = True; break
+            
+            if fit:
+                current_weight += item['weight']
+            else:
+                not_placed.append(item)
+                
+    ldm = (max([s['x'] + s['w'] for s in placed_stacks]) / 100) if placed_stacks else 0
+    return placed_stacks, current_weight, not_placed, ldm
 
-        # 2. Próba postawienia na podłodze (z rotacją)
-        dims_to_try = [(it['width'], it['length']), (it['length'], it['width'])]
-        for w, l in dims_to_try:
-            if curr_y + l <= vehicle['W'] and curr_x + w <= vehicle['L']:
-                # Miejsce w obecnym rzędzie
-                it_copy = it.copy()
-                it_copy['z'] = 0
-                placed_stacks.append({'x': curr_x, 'y': curr_y, 'w': w, 'l': l, 'curH': it['height'], 'items': [it_copy]})
-                curr_y += l
-                row_max_width = max(row_max_width, w)
-                total_weight += it['weight']
-                fit_found = True
-                break
-            elif curr_x + row_max_width + w <= vehicle['L'] and l <= vehicle['W']:
-                # Nowy rząd
-                curr_x += row_max_width
-                curr_y = 0
-                row_max_width = w
-                it_copy = it.copy()
-                it_copy['z'] = 0
-                placed_stacks.append({'x': curr_x, 'y': curr_y, 'w': w, 'l': l, 'curH': it['height'], 'items': [it_copy]})
-                curr_y += l
-                total_weight += it['weight']
-                fit_found = True
-                break
-        
-        if not fit_found:
-            not_placed.append(it)
-
-    # Oblicz LDM (Longest X / 100)
-    ldm = max([s['x'] + s['w'] for s in placed_stacks]) / 100 if placed_stacks else 0
-    return placed_stacks, total_weight, not_placed, ldm
-
-# --- 4. WIZUALIZACJA 3D PRO ---
-def create_3d_view(stacks, vehicle):
+# --- 4. WIZUALIZACJA ---
+def draw_3d(stacks, vehicle):
     fig = go.Figure()
+    # Obrys auta
+    fig.add_trace(go.Mesh3d(x=[0, vehicle['L'], vehicle['L'], 0], y=[0, 0, vehicle['W'], vehicle['W']], z=[0, 0, 0, 0], color='lightgray', opacity=0.2))
     
-    # Rysowanie obrysu paki
-    fig.add_trace(go.Mesh3d(
-        x=[0, vehicle['L'], vehicle['L'], 0, 0, vehicle['L'], vehicle['L'], 0],
-        y=[0, 0, vehicle['W'], vehicle['W'], 0, 0, vehicle['W'], vehicle['W']],
-        z=[0, 0, 0, 0, vehicle['H'], vehicle['H'], vehicle['H'], vehicle['H']],
-        opacity=0.05, color='cyan', hoverinfo='skip'
-    ))
-
-    colors = ["#636EFA", "#EF553B", "#00CC96", "#AB63FA", "#FFA15A", "#19D3F3", "#FF6692", "#B6E880"]
-
+    colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+    
     for i, s in enumerate(stacks):
         color = colors[i % len(colors)]
         for it in s['items']:
             x, y, z = s['x'], s['y'], it['z']
             dx, dy, dz = (it['width'], it['length'], it['height']) if it['width'] == s['w'] else (it['length'], it['width'], it['height'])
             
-            # Box
             fig.add_trace(go.Mesh3d(
                 x=[x, x+dx, x+dx, x, x, x+dx, x+dx, x],
                 y=[y, y, y+dy, y+dy, y, y, y+dy, y+dy],
                 z=[z, z, z, z, z+dz, z+dz, z+dz, z+dz],
                 i=[7,0,0,0,4,4,6,6,4,0,3,2], j=[3,4,1,2,5,6,5,2,0,1,6,3], k=[0,7,2,3,6,7,1,1,5,5,7,6],
-                color=color, opacity=0.8, name=it['name'],
-                hovertemplate=f"<b>{it['name']}</b><br>Waga: {it['weight']}kg<br>Z: {z}cm<extra></extra>"
+                color=color, opacity=0.7, name=it['name']
             ))
-            # Krawędzie dla czytelności
-            fig.add_trace(go.Scatter3d(
-                x=[x, x+dx, x+dx, x, x, x, x+dx, x+dx, x, x, x+dx, x+dx, x+dx, x+dx, x, x],
-                y=[y, y, y+dy, y+dy, y, y, y, y+dy, y+dy, y+dy, y+dy, y, y, y+dy, y+dy, y],
-                z=[z, z, z, z, z, z+dz, z+dz, z, z, z+dz, z+dz, z+dz, z, z, z+dz, z+dz],
-                mode='lines', line=dict(color='black', width=2), hoverinfo='skip'
-            ))
-
-    fig.update_layout(
-        scene=dict(
-            aspectmode='data',
-            xaxis_title="Długość (cm)", yaxis_title="Szerokość (cm)", zaxis_title="Wysokość (cm)",
-            camera=dict(eye=dict(x=1.5, y=1.5, z=1.2))
-        ),
-        margin=dict(l=0, r=0, b=0, t=0),
-        showlegend=False
-    )
+    fig.update_layout(scene=dict(aspectmode='data'), margin=dict(l=0,r=0,b=0,t=0))
     return fig
 
 # --- 5. GŁÓWNY INTERFEJS ---
 def main():
-    st.title("📦 SQM Logistics Planner Pro")
+    st.header("🚛 SQM Logistics: Kalkulator Opakowań")
     
-    if 'cargo_list' not in st.session_state:
-        st.session_state.cargo_list = []
-
-    all_products = load_products()
+    if 'cargo' not in st.session_state: st.session_state.cargo = []
+    all_prods = load_products()
 
     with st.sidebar:
-        st.header("⚙️ Konfiguracja")
-        v_name = st.selectbox("Wybierz pojazd:", list(VEHICLES.keys()))
-        v_data = VEHICLES[v_name]
-        
-        st.info(f"Parametry: {v_data['L']}x{v_data['W']}x{v_data['H']} cm | Max: {v_data['maxWeight']} kg")
+        st.subheader("🛠️ Ustawienia transportu")
+        v_type = st.selectbox("Pojazd:", list(VEHICLES.keys()))
+        veh = VEHICLES[v_type]
         
         st.divider()
-        st.subheader("🚀 Dodaj ładunek")
-        selected_p = st.selectbox("Produkt z bazy:", [p['name'] for p in all_products], index=None)
-        qty = st.number_input("Ilość (sztuk):", min_value=1, value=1)
+        st.subheader("📦 Dodaj produkt")
+        p_name = st.selectbox("Wybierz z bazy:", [p['name'] for p in all_prods], index=None)
         
-        if st.button("Dodaj do planu", use_container_width=True, type="primary"):
-            if selected_p:
-                p_info = next(p for p in all_products if p['name'] == selected_p)
-                for _ in range(qty):
-                    st.session_state.cargo_list.append(p_info.copy())
-                st.toast(f"Dodano {qty}x {selected_p}")
-            else:
-                st.warning("Wybierz produkt!")
-
-        if st.button("Wyczyść wszystko", use_container_width=True):
-            st.session_state.cargo_list = []
-            st.rerun()
-
-    # --- WIDOK GŁÓWNY ---
-    if not st.session_state.cargo_list:
-        st.placeholder().visual_content = st.info("Twoja lista załadunkowa jest pusta. Dodaj produkty z panelu bocznego.")
-        return
-
-    # Statystyki ogólne
-    c1, c2, c3, c4 = st.columns(4)
-    total_qty = len(st.session_state.cargo_list)
-    total_w = sum(i['weight'] for i in st.session_state.cargo_list)
-    total_v = sum((i['width']*i['length']*i['height'])/1000000 for i in st.session_state.cargo_list)
-    
-    c1.metric("Sztuk łącznie", total_qty)
-    c2.metric("Waga całkowita", f"{total_w} kg")
-    c3.metric("Objętość", f"{total_v:.2f} m³")
-    c4.metric("LDM (Suma)", f"{(total_w/v_data['maxWeight'])* (v_data['L']/100):.2f}")
-
-    # Proces pakowania
-    remaining = [dict(i) for i in st.session_state.cargo_list]
-    fleet_results = []
-    
-    while remaining:
-        stacks, weight, not_p, ldm = optimize_packing(remaining, v_data)
-        if not stacks and remaining: 
-            st.error("Niektóre przedmioty są za duże dla tego pojazdu!")
-            break
-        fleet_results.append({"stacks": stacks, "weight": weight, "ldm": ldm})
-        remaining = not_p
-
-    # Wyniki
-    st.header(f"🚛 Plan Transportu: {len(fleet_results)} pojazd(y)")
-    
-    for idx, truck in enumerate(fleet_results):
-        with st.container():
-            st.markdown(f"""<div class="vehicle-card">
-                <h3>Pojazd #{idx+1} ({v_name})</h3>
-                Wypełnienie wagowe: <b>{ (truck['weight']/v_data['maxWeight'])*100:.1f}%</b> | 
-                Zajęte LDM: <b>{truck['ldm']:.2f}</b>
+        if p_name:
+            p_data = next(p for p in all_prods if p['name'] == p_name)
+            ipc = p_data['itemsPerCase']
+            
+            st.markdown(f"""<div class="unit-box">
+                <b>Standard pakowania:</b><br>
+                1 opakowanie = {ipc} szt.
             </div>""", unsafe_allow_html=True)
             
-            col_chart, col_data = st.columns([2, 1])
+            input_qty = st.number_input("Ile SZTUK chcesz wysłać?", min_value=1, value=ipc)
             
-            with col_chart:
-                st.plotly_chart(create_3d_view(truck['stacks'], v_data), use_container_width=True)
+            # --- LOGIKA PRZELICZANIA ---
+            num_cases = math.ceil(input_qty / ipc)
+            st.info(f"To zajmie: **{num_cases}** opakowań")
             
-            with col_data:
-                st.subheader("Zawartość")
-                # Agregacja do tabeli
-                truck_items = []
-                for s in truck['stacks']:
-                    for it in s['items']:
-                        truck_items.append(it['name'])
-                
-                summary_df = pd.Series(truck_items).value_counts().reset_index()
-                summary_df.columns = ['Produkt', 'Sztuk']
-                st.table(summary_df)
+            if st.button("Dodaj do listy załadunkowej", use_container_width=True, type="primary"):
+                for i in range(num_cases):
+                    case = p_data.copy()
+                    # Ostatnie opakowanie może być niepełne, ale wymiary skrzyni są stałe
+                    case['is_full'] = True if (i < num_cases - 1 or input_qty % ipc == 0) else False
+                    case['contained_pieces'] = ipc if case['is_full'] else (input_qty % ipc)
+                    st.session_state.cargo.append(case)
+                st.rerun()
 
-    # Export
-    if st.button("Generuj Raport PDF (Symulacja)"):
-        st.snow()
-        st.success("Raport gotowy do pobrania (funkcja demo)")
+        if st.button("Wyczyść listę"):
+            st.session_state.cargo = []; st.rerun()
+
+    # --- WIDOK LISTY I WYNIKÓW ---
+    if st.session_state.cargo:
+        # Statystyki
+        df = pd.DataFrame(st.session_state.cargo)
+        total_pcs = df['contained_pieces'].sum()
+        total_w = df['weight'].sum()
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Sztuk łącznie", f"{int(total_pcs)} szt.")
+        col2.metric("Opakowań (Case)", len(st.session_state.cargo))
+        col3.metric("Waga ładunku", f"{total_w} kg")
+
+        # Pakowanie
+        to_pack = [dict(i) for i in st.session_state.cargo]
+        trucks = []
+        while to_pack:
+            stacks, w, remaining, ldm = pack_items(to_pack, veh)
+            if not stacks: break
+            trucks.append({"stacks": stacks, "weight": w, "ldm": ldm})
+            to_pack = remaining
+
+        st.subheader(f"📊 Wynik optymalizacji: {len(trucks)} pojazd(y)")
+        
+        for i, t in enumerate(trucks):
+            with st.expander(f"🚛 Pojazd #{i+1} | Waga: {t['weight']}kg | LDM: {t['ldm']:.2f}", expanded=True):
+                c_chart, c_list = st.columns([2, 1])
+                with c_chart:
+                    st.plotly_chart(draw_3d(t['stacks'], veh), use_container_width=True)
+                with c_list:
+                    st.write("**Lista pakunkowa:**")
+                    # Zliczanie wystąpień dla tego konkretnego auta
+                    items_in_truck = []
+                    for s in t['stacks']:
+                        for it in s['items']:
+                            items_in_truck.append(it['name'])
+                    st.dataframe(pd.Series(items_in_truck).value_counts(), column_config={"index": "Produkt", "0": "Opakowań"})
+    else:
+        st.info("Wybierz produkt i podaj liczbę sztuk w panelu bocznym, aby rozpocząć planowanie.")
 
 if __name__ == "__main__":
     main()
